@@ -22,7 +22,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { gettext as extensionGettext } from "resource:///org/gnome/shell/extensions/extension.js";
 import { setUpGettext } from "./gettext.js";
-import { mediaFree, mediaLaunched, getMediaPlayers } from "./mpris.js";
+import { mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPlayer } from "./mpris.js";
 
 export default class DropbeatExtension extends Extension {
 
@@ -39,9 +39,12 @@ export default class DropbeatExtension extends Extension {
         this.#gsettings = this.getSettings();
 
         mediaLaunched(name => {
-            this.#createIndicator();
+            this.#mediaChanged(name);
         }, name => {
             this.#destroyIndicator();
+            this.#mediaChanged(name);
+        }, name => {
+            this.#mediaChanged(name);
         });
 
         this.#enableAsync().catch(err => {
@@ -51,7 +54,10 @@ export default class DropbeatExtension extends Extension {
 
     async #enableAsync() : Promise<void> {
         const players = await getMediaPlayers();
-        if(players.length > 0) this.#createIndicator();
+        if(players.length > 0) {
+            this.#createIndicator();
+            this.#mediaChanged(players[0]);
+        }
     }
 
     /**
@@ -88,6 +94,15 @@ export default class DropbeatExtension extends Extension {
         this.#panelIcon = undefined;
         this.#indicator?.destroy();
         this.#indicator = undefined;
+    }
+
+    #mediaChanged(name : string) : void {
+        const info = mediaQueryPlayer(name);
+
+        if(!info) this.#destroyIndicator();
+        else if(!this.#indicator) this.#createIndicator();
+
+        // do something...
     }
 
 }

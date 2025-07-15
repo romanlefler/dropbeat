@@ -17,14 +17,18 @@
 
 import Gio from "gi://Gio";
 import GLib from "gi://GLib";
+import { str, i64 } from "./gvariant.js";
 
-const bus = Gio.DBus.session;
+let bus = Gio.DBus.session;
 
+const proxies : Record<string, Gio.DBusProxy> = { };
 const subs : number[] = [ ];
 
 export type PlayerCallback = (name : string) => void;
 
-export function mediaLaunched(started : PlayerCallback, exited : PlayerCallback) : void {
+export function mediaLaunched(
+    started : PlayerCallback, exited : PlayerCallback, changed : PlayerCallback
+) : void {
     const id = bus.signal_subscribe(
         "org.freedesktop.DBus",
         "org.freedesktop.DBus",
@@ -32,7 +36,7 @@ export function mediaLaunched(started : PlayerCallback, exited : PlayerCallback)
         null,
         null,
         Gio.DBusSignalFlags.NONE,
-        (_conn, _sender, _objectPath, _interfaceName, _signalName, params) => {
+        async (_conn, _sender, _objectPath, _interfaceName, _signalName, params) => {
             let nameV : GLib.Variant, oldOwnerV : GLib.Variant, newOwnerV : GLib.Variant;
             [ nameV, oldOwnerV, newOwnerV ] = params.unpack() as any;
             const name = nameV.get_string()[0];
@@ -42,10 +46,13 @@ export function mediaLaunched(started : PlayerCallback, exited : PlayerCallback)
             if(!name.startsWith("org.mpris.MediaPlayer2.")) return;
             if(!oldOwner && newOwner)
             {
+                proxies[name] = await createProxy(name);
+                mediaChanged(proxies[name], () => changed(name));
                 started(name);
             }
             else if(oldOwner && !newOwner)
             {
+                delete proxies[name];
                 exited(name);
             }
         }
@@ -80,8 +87,88 @@ export async function getMediaPlayers() : Promise<string[]> {
     });
 }
 
+async function createProxy(name : string) : Promise<Gio.DBusProxy> {
+    return new Promise<Gio.DBusProxy>((resolve, reject) => {
+        Gio.DBusProxy.new(
+            bus,
+            Gio.DBusProxyFlags.NONE,
+            null,
+            name,
+            "/org/mpris/MediaPlayer2",
+            "org.mpris.MediaPlayer2.Player",
+            null,
+            (_, result) => {
+                const proxy = Gio.DBusProxy.new_finish(result);
+                resolve(proxy);
+            }
+        );
+    });
+}
+
+function mediaChanged(proxy : Gio.DBusProxy, callback : () => void) : void {
+    proxy.connect("g-properties-changed", (_, props) => {
+        const changed : string[] = props.deep_unpack();
+        if("Metadata" in changed) callback();
+    });
+}
+
+export interface PlayerInfo {
+    title : string | null;
+    artists : string[] | null;
+    album : string | null;
+    trackN : number | null;
+    discN : number | null;
+    genres : string[] | null;
+    release : Date | null;
+    artUrl : string | null;
+    seconds : number | null;
+}
+
+export function mediaQueryPlayer(name : string) : PlayerInfo | null {
+    try {
+        const proxy = proxies[name];
+        if(!proxy) throw new Error(`No proxy for media player ${name}`);
+
+        const metaV = proxy.get_cached_property("Metadata");
+        if(!metaV) throw new Error(`No metadata for media player ${name}`);
+
+        const meta : Record<string, GLib.Variant> = { };
+        const len = metaV.n_children();
+        if(!len) return null;
+        for(let i = 0; i < len; i++) {
+            const item = metaV.get_child_value(i);
+            const key = str(item.get_child_value(0))!;
+            const value = item.get_child_value(1);
+            meta[key] = value.get_variant();
+        }
+
+        const date = str(meta["xesam:contentCreated"]);
+        const sec = i64(meta["mpris:length"]);
+        return {
+            title: str(meta["xesam:title"]),
+            artists: meta["xesam:artist"]?.deep_unpack() ?? null,
+            album: str(meta["xesam:album"]),
+            trackN: i64(meta["xesam:trackNumber"]),
+            discN: i64(meta["xesam:discNumber"]),
+            genres: meta["xesam:genre"]?.deep_unpack() ?? null,
+            release: date ? new Date(date) : null,
+            artUrl: str(meta["mpris:artUrl"]),
+            seconds: sec ? sec / 1000000 : null
+        };
+        
+    } catch(e) {
+        console.error(`Failed to query media player ${name}: ${e}`);
+        return null;
+    }
+}
+
 export function mediaFree() : void {
     let id : number | undefined;
     while((id = subs.pop()) !== undefined) bus.signal_unsubscribe(id);
+
+    for(const p in proxies) delete proxies[p];
+
+    // @ts-ignore
+    bus = null;
 }
 
