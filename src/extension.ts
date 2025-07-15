@@ -22,7 +22,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { gettext as extensionGettext } from "resource:///org/gnome/shell/extensions/extension.js";
 import { setUpGettext } from "./gettext.js";
-import { mediaFree, mediaLaunched } from "./mpris.js";
+import { mediaFree, mediaLaunched, getMediaPlayers } from "./mpris.js";
 
 export default class DropbeatExtension extends Extension {
 
@@ -43,6 +43,15 @@ export default class DropbeatExtension extends Extension {
         }, name => {
             this.#destroyIndicator();
         });
+
+        this.#enableAsync().catch(err => {
+            console.error(`Error when enabling Dropbeat: ${err}`);
+        });
+    }
+
+    async #enableAsync() : Promise<void> {
+        const players = await getMediaPlayers();
+        if(players.length > 0) this.#createIndicator();
     }
 
     /**
@@ -63,7 +72,7 @@ export default class DropbeatExtension extends Extension {
         });
 
         this.#panelIcon = new St.Icon({
-            icon_name: "view-refresh-symbolic",
+            icon_name: "folder-music-symbolic",
             style_class: "system-status-icon"
         });
 

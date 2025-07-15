@@ -53,6 +53,33 @@ export function mediaLaunched(started : PlayerCallback, exited : PlayerCallback)
     subs.push(id);
 }
 
+export async function getMediaPlayers() : Promise<string[]> {
+    return new Promise<string[]>((resolve, reject) => {
+        bus.call(
+            "org.freedesktop.DBus",
+            "/org/freedesktop/DBus",
+            "org.freedesktop.DBus",
+            "ListNames",
+            null,
+            null,
+            Gio.DBusCallFlags.NONE,
+            -1,
+            null,
+            (_conn, result) => {
+                try {
+                    const namesV = bus.call_finish(result);
+                    const names : string[] = (namesV.deep_unpack() as any)[0];
+                    const players = names.filter(s => s.startsWith("org.mpris.MediaPlayer2."));
+                    resolve(players);
+                } catch (e) {
+                    console.error(`Failed to list media players: ${e}`);
+                    resolve([ ]);
+                }
+            }
+        );
+    });
+}
+
 export function mediaFree() : void {
     let id : number | undefined;
     while((id = subs.pop()) !== undefined) bus.signal_unsubscribe(id);
