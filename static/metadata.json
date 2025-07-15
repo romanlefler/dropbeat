@@ -1,0 +1,12 @@
+{
+    "name": "Dropbeat",
+    "description": "A flashy extension to view your music/media.",
+    "uuid": "dropbeat@romanlefler.com",
+    "url": "https://github.com/romanlefler/dropbeat",
+    "settings-schema": "org.gnome.shell.extensions.dropbeat",
+    "gettext-domain": "dropbeat@romanlefler.com",
+    "shell-version": [
+        "48"
+    ],
+    "version-name": "48.0.0-dev"
+}

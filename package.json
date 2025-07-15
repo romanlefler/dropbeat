@@ -1,0 +1,32 @@
+{
+  "name": "dropbeat",
+  "version": "48.0.0",
+  "description": "A GNOME Shell Extension for Music/Media",
+  "keywords": [
+    "gnome",
+    "extension",
+    "music",
+    "media"
+  ],
+  "homepage": "https://github.com/romanlefler/dropbeat#readme",
+  "bugs": {
+    "url": "https://github.com/romanlefler/dropbeat/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/romanlefler/dropbeat.git"
+  },
+  "license": "GPL-3.0-or-later",
+  "author": "Roman Lefler",
+  "type": "module",
+  "private": true,
+  "sideEffects": false,
+  "devDependencies": {
+    "eslint": "9.28.0",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@girs/gjs": "4.0.0-beta.23",
+    "@girs/gnome-shell": "48.0.2"
+  }
+}

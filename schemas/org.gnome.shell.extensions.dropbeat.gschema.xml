@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schemalist>
+    <schema id="org.gnome.shell.extensions.dropbeat" path="/org/gnome/shell/extensions/dropbeat/">
+
+    </schema>
+</schemalist>
