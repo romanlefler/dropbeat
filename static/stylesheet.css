@@ -1,0 +1,19 @@
+
+.dropbeat-menu {
+    background: green;
+    box-shadow: none;
+    border: none;
+    border-radius: 14px;
+}
+
+.dropbeat-menu * {
+    color: white;
+}
+
+.dropbeat-cover {
+    background-image: none;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+

@@ -18,15 +18,18 @@
 import Gio from "gi://Gio";
 import St from "gi://St";
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
-import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js";
+import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
+import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { gettext as extensionGettext } from "resource:///org/gnome/shell/extensions/extension.js";
 import { setUpGettext } from "./gettext.js";
 import { mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPlayer } from "./mpris.js";
+import { Popup } from "./popup.js";
 
 export default class DropbeatExtension extends Extension {
 
     #gsettings? : Gio.Settings;
+    #popup? : Popup;
     #indicator? : PanelMenu.Button;
     #panelIcon? : St.Icon;
 
@@ -85,6 +88,9 @@ export default class DropbeatExtension extends Extension {
         layout.add_child(this.#panelIcon);
         indic.add_child(layout);
 
+        this.#popup?.free();
+        this.#popup = indic.menu instanceof PopupMenu.PopupMenu ? new Popup(indic.menu) : undefined;
+
         this.#indicator?.destroy();
         this.#indicator = indic;
         Main.panel.addToStatusArea(this.uuid, this.#indicator!, 0, "right");
@@ -94,6 +100,8 @@ export default class DropbeatExtension extends Extension {
         this.#panelIcon = undefined;
         this.#indicator?.destroy();
         this.#indicator = undefined;
+        this.#popup?.free();
+        this.#popup = undefined;
     }
 
     #mediaChanged(name : string) : void {
