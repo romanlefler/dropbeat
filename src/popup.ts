@@ -18,6 +18,8 @@
 import St from "gi://St";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
+import { PlayerInfo } from "./mpris.js";
+import { gettext as _g } from "./gettext.js";
 
 function getScreenSize() : { w : number, h : number} {
     const monitor = Main.layoutManager.primaryMonitor;
@@ -25,6 +27,10 @@ function getScreenSize() : { w : number, h : number} {
         w: monitor?.width ?? 1920,
         h: monitor?.height ?? 1080
     };
+}
+
+function vSpacer(px : number) {
+    return new St.Bin({ height: px, margin_top: 0, margin_bottom: 0 });
 }
 
 export class Popup {
@@ -35,26 +41,48 @@ export class Popup {
     #title : St.Label;
 
     constructor(menu : PopupMenu.PopupMenu) {
-        const box = new St.BoxLayout({ vertical: true, style_class: "dropbeat-card" });
-        this.#cover = new St.Widget({ style_class: "dropbeat-cover" });
-        this.#title = new St.Label({ text: "Title" });
-        box.add_child(this.#cover);
-        box.add_child(this.#title);
+        const { w: screenW, h: screenH } = getScreenSize();
+        const szMin = Math.min(screenW, screenH);
+        // 3:2 aspect ratio
+        const w = szMin * 0.5 / 1.5;
+        const h = szMin * 0.5;
 
-        const { w, h } = getScreenSize();
-        const szMin = Math.min(w, h);
+        const box = new St.BoxLayout({
+            style_class: "dropbeat-card",
+            vertical: true,
+            x_expand: true,
+            y_expand: true
+        });
+        this.#cover = new St.Widget({
+            style_class: "dropbeat-cover",
+            width: w * 0.8,
+            height: w * 0.8
+        });
+        this.#title = new St.Label({
+            style_class: "dropbeat-title",
+            text: _g("No Title")
+        });
+        box.add_child(vSpacer(0));
+        box.add_child(this.#cover);
+        box.add_child(vSpacer(20));
+        box.add_child(this.#title);
 
         this.#menuItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
         this.#menuItem.actor.add_child(box);
 
         menu.addMenuItem(this.#menuItem);
-        // 3:2 aspect ratio
-        menu.box.set_size(szMin * 0.5 * 1.5, szMin * 0.5);
+        
+        menu.box.set_size(w, h);
         menu.box.add_style_class_name("dropbeat-menu");
     }
 
     free() {
         this.#menuItem.destroy();
+    }
+
+    updateGui(p : PlayerInfo) : void {
+        this.#title.text = p.title || _g("No Title");
+        this.#cover.style = `background-image: url("${p.artUrl}");`;
     }
 
 }

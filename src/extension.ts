@@ -110,7 +110,9 @@ export default class DropbeatExtension extends Extension {
         if(!info) this.#destroyIndicator();
         else if(!this.#indicator) this.#createIndicator();
 
-        // do something...
+        if(info) {
+            this.#popup?.updateGui(info);
+        }
     }
 
 }
