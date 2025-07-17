@@ -1,5 +1,6 @@
 
 dist/
+po/dropbeat@romanlefler.com.pot
 
 .cache/
 node_modules/
