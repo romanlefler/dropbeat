@@ -10,12 +10,13 @@ DIST         := ./dist
 BUILD        := $(DIST)/build
 SCHEMAOUTDIR := $(BUILD)/schemas
 PO			 := ./po
+RESOURCES    := ./resources
 
-STATICSRCS := $(wildcard $(STATIC)/*)
-SCHEMASRC  := $(SCHEMAS)/org.gnome.shell.extensions.$(NAME).gschema.xml
+STATICSRCS     := $(wildcard $(STATIC)/*)
+SCHEMASRC      := $(SCHEMAS)/org.gnome.shell.extensions.$(NAME).gschema.xml
 # This excludes .d.ts files
-SRCS       := $(shell find $(SRC) -type f -name '*.ts' ! -name '*.d.ts')
-POFILES	   := $(wildcard $(PO)/*.po)
+SRCS           := $(shell find $(SRC) -type f -name '*.ts' ! -name '*.d.ts')
+POFILES	       := $(wildcard $(PO)/*.po)
 
 SCHEMAOUT    := $(SCHEMAOUTDIR)/gschemas.compiled
 SCHEMACP     := $(SCHEMAOUTDIR)/org.gnome.shell.extensions.$(NAME).gschema.xml
@@ -67,10 +68,18 @@ clean:
 ts: $(BUILD)/extension.js
 
 # Build files with tsc
-$(BUILD)/extension.js: $(SRCS) ./node_modules/.package-lock.json
+$(BUILD)/extension.js $(BUILD)/resources.js: $(SRCS) ./node_modules/.package-lock.json
 	@printf -- 'NEEDED: tsc\n'
 	tsc
 	@touch $(BUILD)/extension.js
+	if ! grep -qF 'const inserted' $(BUILD)/resources.js; then \
+		f=$$(mktemp); \
+		printf -- 'const inserted = {\n\t"temp": `' > $$f; \
+		printf -- 'temp' >> $$f; \
+		printf -- '`\n};\n' >> $$f; \
+		cat $(BUILD)/resources.js >> $$f; \
+		mv $$f $(BUILD)/resources.js; \
+	fi
 
 $(SCHEMAOUT): $(SCHEMASRC)
 	@printf -- 'NEEDED: glib-compile-schemas\n'
