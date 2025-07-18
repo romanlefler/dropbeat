@@ -15,9 +15,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+import Clutter from "gi://Clutter";
 import St from "gi://St";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
+import { ExtensionMetadata } from "resource:///org/gnome/shell/extensions/extension.js";
 import { PlayerInfo } from "./mpris.js";
 import { gettext as _g } from "./gettext.js";
 
@@ -35,12 +37,18 @@ function vSpacer(px : number) {
 
 export class Popup {
 
-    #menuItem : PopupMenu.PopupBaseMenuItem;
+    #metadata : ExtensionMetadata;
 
-    #cover : St.Widget;
+    #menuItem : PopupMenu.PopupBaseMenuItem;
+    #menuBox : St.BoxLayout;
+
+    #coverBin : St.Widget;
+    #coverImg : St.Widget;
     #title : St.Label;
 
-    constructor(menu : PopupMenu.PopupMenu) {
+    constructor(menu : PopupMenu.PopupMenu, metadata : ExtensionMetadata) {
+        this.#metadata = metadata;
+
         const { w: screenW, h: screenH } = getScreenSize();
         const szMin = Math.min(screenW, screenH);
         // 3:2 aspect ratio
@@ -53,17 +61,25 @@ export class Popup {
             x_expand: true,
             y_expand: true
         });
-        this.#cover = new St.Widget({
+        this.#coverImg = new St.Widget({
             style_class: "dropbeat-cover",
-            width: w * 0.8,
-            height: w * 0.8
+            x_expand: true,
+            y_expand: true,
+            x_align: Clutter.ActorAlign.FILL,
+            y_align: Clutter.ActorAlign.FILL
         });
+        this.#coverBin = new St.Bin({
+            width: w * 0.8,
+            height: w * 0.8,
+            child: this.#coverImg
+        });
+
         this.#title = new St.Label({
             style_class: "dropbeat-title",
             text: _g("No Title")
         });
         box.add_child(vSpacer(0));
-        box.add_child(this.#cover);
+        box.add_child(this.#coverBin);
         box.add_child(vSpacer(20));
         box.add_child(this.#title);
 
@@ -74,6 +90,8 @@ export class Popup {
         
         menu.box.set_size(w, h);
         menu.box.add_style_class_name("dropbeat-menu");
+        menu.box.add_style_class_name("dash-background");
+        this.#menuBox = menu.box;
     }
 
     free() {
@@ -82,7 +100,12 @@ export class Popup {
 
     updateGui(p : PlayerInfo) : void {
         this.#title.text = p.title || _g("No Title");
-        this.#cover.style = `background-image: url("${p.artUrl}");`;
+
+        let uri : string;
+        if(p.artUrl) uri = p.artUrl;
+        else uri = this.#metadata.path + "/music.png";
+        console.error(uri);
+        this.#coverImg.style = `background-image: url('${uri}');`;
     }
 
 }
