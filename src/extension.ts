@@ -25,6 +25,7 @@ import { gettext as extensionGettext } from "resource:///org/gnome/shell/extensi
 import { setUpGettext } from "./gettext.js";
 import { mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPlayer } from "./mockMpris.js";
 import { Popup } from "./popup.js";
+import { setUpSoup, freeSoup } from "./soup.js";
 
 export default class DropbeatExtension extends Extension {
 
@@ -39,6 +40,7 @@ export default class DropbeatExtension extends Extension {
      */
     enable() : void {
         setUpGettext(extensionGettext);
+        setUpSoup();
         this.#gsettings = this.getSettings();
 
         mediaLaunched(name => {
@@ -67,6 +69,7 @@ export default class DropbeatExtension extends Extension {
      * Called by GNOME Extensions when this extension is disabled.
      */
     disable() : void {
+        freeSoup();
         mediaFree();
 
         this.#destroyIndicator();

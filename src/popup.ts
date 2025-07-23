@@ -22,6 +22,7 @@ import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { ExtensionMetadata } from "resource:///org/gnome/shell/extensions/extension.js";
 import { PlayerInfo } from "./mpris.js";
 import { gettext as _g } from "./gettext.js";
+import { getStandardCover, getBlurredCover } from "./tmpfiles.js";
 
 function getScreenSize() : { w : number, h : number} {
     const monitor = Main.layoutManager.primaryMonitor;
@@ -38,6 +39,7 @@ function vSpacer(px : number) {
 export class Popup {
 
     #metadata : ExtensionMetadata;
+    #coverUri : string | null = null;
 
     #menuItem : PopupMenu.PopupBaseMenuItem;
     #menuBox : St.BoxLayout;
@@ -90,7 +92,6 @@ export class Popup {
         
         menu.box.set_size(w, h);
         menu.box.add_style_class_name("dropbeat-menu");
-        menu.box.add_style_class_name("dash-background");
         this.#menuBox = menu.box;
     }
 
@@ -99,13 +100,23 @@ export class Popup {
     }
 
     updateGui(p : PlayerInfo) : void {
+        this.updateGuiAsync(p).catch(e => console.error(e));
+    }
+
+    async updateGuiAsync(p : PlayerInfo) : Promise<void> {
         this.#title.text = p.title || _g("No Title");
 
         let uri : string;
         if(p.artUrl) uri = p.artUrl;
         else uri = this.#metadata.path + "/music.png";
-        console.error(uri);
-        this.#coverImg.style = `background-image: url('${uri}');`;
+
+        if(this.#coverUri !== uri && uri) {
+            const art = await getStandardCover(uri);
+            const blurred = await getBlurredCover(art);
+            this.#coverImg.style = `background-image: url('${art}');`;
+            this.#menuBox.style = `background-image: url('${blurred}');`;
+        }
+        this.#coverUri = uri;
     }
 
 }

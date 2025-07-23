@@ -1,9 +1,10 @@
 
 .dropbeat-menu {
-    background: green;
+    background: #303040;
     box-shadow: none;
     border: none;
     border-radius: 14px;
+    background-size: cover;
 }
 
 .dropbeat-menu * {
