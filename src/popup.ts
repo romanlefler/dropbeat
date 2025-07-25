@@ -23,7 +23,7 @@ import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { ExtensionMetadata } from "resource:///org/gnome/shell/extensions/extension.js";
 import { PlayerInfo } from "./mpris.js";
 import { gettext as _g } from "./gettext.js";
-import { getStandardCover, getBlurredCover, BannedImageFormatError } from "./tmpfiles.js";
+import { getStandardCover, getBlurredCover, BannedImageFormatError } from "./imgprocessing.js";
 
 function getScreenSize() : { w : number, h : number} {
     const monitor = Main.layoutManager.primaryMonitor;
