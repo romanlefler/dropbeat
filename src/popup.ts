@@ -23,7 +23,7 @@ import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { ExtensionMetadata } from "resource:///org/gnome/shell/extensions/extension.js";
 import { PlayerInfo } from "./mpris.js";
 import { gettext as _g } from "./gettext.js";
-import { getStandardCover, getBlurredCover } from "./tmpfiles.js";
+import { getStandardCover, getBlurredCover, BannedImageFormatError } from "./tmpfiles.js";
 
 function getScreenSize() : { w : number, h : number} {
     const monitor = Main.layoutManager.primaryMonitor;
@@ -65,7 +65,7 @@ export class Popup {
             y_expand: true
         });
         this.#coverImg = new St.Widget({
-            style_class: "dropbeat-cover",
+            style_class: "dropbeat-text dropbeat-cover",
             x_expand: true,
             y_expand: true,
             x_align: Clutter.ActorAlign.FILL,
@@ -116,16 +116,17 @@ export class Popup {
         else uri = this.#metadata.path + "/music.png";
 
         if(this.#coverUri !== uri && uri) {
-            let art : string;
+            let art : string, blurred : string;
             try {
                 art = await getStandardCover(uri);
+                blurred = await getBlurredCover(art);
             } catch(e) {
-                if(e instanceof Gio.ResolverError) {
-                    console.warn(`Failed to resolve cover art URI "${uri}": ${e.message}`);
+                if(e instanceof Gio.ResolverError || e instanceof BannedImageFormatError) {
+                    console.warn(`Failed to process cover art "${uri}": ${e.message}`);
                     art = await getStandardCover(`file://${this.#metadata.path}/music.png`);
+                    blurred = await getBlurredCover(art);
                 } else throw e;
             }
-            const blurred = await getBlurredCover(art);
             this.#coverImg.style = `background-image: url('${art}');`;
             this.#menuBox.style = `background-image: url('${blurred}');`;
         }

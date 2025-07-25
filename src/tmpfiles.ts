@@ -20,6 +20,15 @@ import Gio from "gi://Gio";
 import { fetchBytes, isOk } from "./soup.js";
 
 const BLUR_RADIUS = "0x40";
+const BRIGHTNESS_PERCENT = "70";
+const CONTRAST_ADDEND = "-20";
+
+export class BannedImageFormatError extends Error {
+    constructor() {
+        super("Image format is unrecognized or not allowed.");
+        this.name = "BannedImageFormatError";
+    }
+}
 
 async function getDir() : Promise<string> {
     const dir = Gio.File.new_for_path("/tmp/dropbeat");
@@ -100,7 +109,11 @@ async function readStreamAsync(stream : Gio.DataInputStream) : Promise<string | 
     });
 }
 
-async function spawnAsync(argv : string[]) : Promise<boolean> {
+/**
+ * Returns if succeeded by default,
+ * otherwise if returnStdout is true, returns the stdout output.
+ */
+async function spawnAsync(argv : string[], returnStdout = false) : Promise<boolean | string> {
     const [success, pid, stdin, stdout, stderr] = GLib.spawn_async_with_pipes(
         null,
         argv,
@@ -109,12 +122,17 @@ async function spawnAsync(argv : string[]) : Promise<boolean> {
         null
     );
     if(!pid) throw new Error(`Couldn't spawn command '${argv.join(" ")}'.`);
-    return new Promise<boolean>((resolve, reject) => {
+    return new Promise<boolean | string>((resolve, reject) => {
         GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, async (_pid, status) => {
             try {
                 const exitCode = status >> 8;
                 if(!exitCode) {
-                    resolve(true);
+                    if(returnStdout) {
+                        const stdoutStream = new Gio.UnixInputStream({ fd: stdout, close_fd: false });
+                        const dataStream = new Gio.DataInputStream({ base_stream: stdoutStream });
+                        const output = await readStreamAsync(dataStream);
+                        resolve(output ?? "");
+                    } else resolve(true);
                 } else {
                         const stderrStream = new Gio.UnixInputStream({ fd: stderr, close_fd: false });
                         const dataStream = new Gio.DataInputStream({ base_stream: stderrStream });
@@ -126,6 +144,46 @@ async function spawnAsync(argv : string[]) : Promise<boolean> {
                 reject(e);
             } finally {
                 GLib.spawn_close_pid(pid);
+            }
+        });
+    });
+}
+
+function arrStartEq(actual : Uint8Array, other : Uint8Array) : boolean {
+    if(actual.length > other.length) return false;
+    for(let i = 0; i < actual.length; i++) {
+        if(actual[i] !== other[i]) return false;
+    }
+    return true;
+}
+
+function detectImageFormat(file : Gio.File) : Promise<"PNG" | "JPEG" | null> {
+    return new Promise((resolve, reject) => {
+        file.read_async(GLib.PRIORITY_DEFAULT, null, (_f, readResult) => {
+            let s : Gio.FileInputStream | undefined;
+            try {
+                s = file.read_finish(readResult);
+                if(!s) return resolve(null);
+                s.read_bytes_async(8, GLib.PRIORITY_DEFAULT, null, (_stream, bytesResult) => {
+                    try {
+                        const b = _stream!.read_bytes_finish(bytesResult);
+                        const arr = b.get_data();
+                        if(!arr) {
+                            reject(new Error("Couldn't read bytes from file."));
+                        } else if(arrStartEq(new Uint8Array([ 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A ]), arr)) {
+                            resolve("PNG");
+                        } else if(arrStartEq(new Uint8Array([ 0xFF, 0xD8, 0xFF ]), arr)) {
+                            resolve("JPEG");
+                        } else resolve(null);
+                    } catch(e) {
+                        reject(e);
+                    } finally {
+                        s?.close(null);
+                    }
+                });
+            } catch(e) {
+                s?.close(null);
+                reject(e);
             }
         });
     });
@@ -152,11 +210,31 @@ export async function getStandardCover(uri : string) : Promise<string> {
     }
 }
 
+/**
+ * Do not pass user input into `originalPath`.
+ *
+ * We start an ImageMagick process here.
+ * It only works if the original image is a PNG or JPEG.
+ */
 export async function getBlurredCover(originalPath : string) : Promise<string> {
     const dir = await getDir();
     const file = Gio.File.new_for_path(`${dir}/blurred`);
     const originalFile = Gio.File.new_for_path(originalPath);
-    const success = await spawnAsync([ "magick", originalFile.get_path()!, "-blur", BLUR_RADIUS, file.get_path()! ]);
+    // We only accept PNG and JPEG formats
+    // This is just a precaution to limit the amount of things we're letting ImageMagick do
+    const imgFmt = await detectImageFormat(originalFile);
+    if(imgFmt !== "PNG" && imgFmt !== "JPEG") {
+        throw new BannedImageFormatError();
+    }
+    // The get paths are used to get absolute paths
+    const success = await spawnAsync([
+        "magick", originalFile.get_path()!,
+        "-blur", BLUR_RADIUS,
+        "-modulate", `${BRIGHTNESS_PERCENT},100,100`,
+        "-brightness-contrast", `0x${CONTRAST_ADDEND}`,
+        "-strip",
+        file.get_path()!
+    ]) as boolean;
 
     if(success && file.query_exists(null)) return file.get_path()!;
     throw new Error(`Failed to create blurred cover.`);
