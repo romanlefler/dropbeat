@@ -72,9 +72,13 @@ export class Popup {
             y_align: Clutter.ActorAlign.FILL
         });
         this.#coverBin = new St.Bin({
-            width: w * 0.8,
-            height: w * 0.8,
             child: this.#coverImg
+        });
+
+        // This forces it to be a square
+        this.#coverImg.connect("notify::allocation", () => {
+            const width = this.#coverBin.allocation.get_width();
+            this.#coverBin.set_size(width, width);
         });
 
         this.#title = new St.Label({
