@@ -23,7 +23,7 @@ import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { gettext as extensionGettext } from "resource:///org/gnome/shell/extensions/extension.js";
 import { setUpGettext } from "./gettext.js";
-import { mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPlayer } from "./mockMpris.js";
+import { mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPlayer } from "./mpris.js";
 import { Popup } from "./popup.js";
 import { setUpSoup, freeSoup } from "./soup.js";
 

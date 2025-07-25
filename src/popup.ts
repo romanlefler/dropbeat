@@ -48,6 +48,7 @@ export class Popup {
     #coverBin : St.Widget;
     #coverImg : St.Widget;
     #title : St.Label;
+    #artist : St.Label;
 
     constructor(menu : PopupMenu.PopupMenu, metadata : ExtensionMetadata) {
         this.#metadata = metadata;
@@ -85,10 +86,15 @@ export class Popup {
             style_class: "dropbeat-title",
             text: _g("No Title")
         });
+        this.#artist = new St.Label({
+            style_class: "dropbeat-artist",
+            text: _g("No Artist")
+        });
         box.add_child(vSpacer(0));
         box.add_child(this.#coverBin);
         box.add_child(vSpacer(20));
         box.add_child(this.#title);
+        box.add_child(this.#artist);
 
         this.#menuItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
         this.#menuItem.actor.add_child(box);
@@ -110,6 +116,7 @@ export class Popup {
 
     async updateGuiAsync(p : PlayerInfo) : Promise<void> {
         this.#title.text = p.title || _g("No Title");
+        this.#artist.text = p.artists?.join(_g(" / ")) || _g("No Artist");
 
         let uri : string;
         if(p.artUrl) uri = p.artUrl;
