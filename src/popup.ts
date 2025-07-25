@@ -16,6 +16,7 @@
 */
 
 import Clutter from "gi://Clutter";
+import Gio from "gi://Gio";
 import St from "gi://St";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
@@ -111,7 +112,15 @@ export class Popup {
         else uri = this.#metadata.path + "/music.png";
 
         if(this.#coverUri !== uri && uri) {
-            const art = await getStandardCover(uri);
+            let art : string;
+            try {
+                art = await getStandardCover(uri);
+            } catch(e) {
+                if(e instanceof Gio.ResolverError) {
+                    console.warn(`Failed to resolve cover art URI "${uri}": ${e.message}`);
+                    art = await getStandardCover(`file://${this.#metadata.path}/music.png`);
+                } else throw e;
+            }
             const blurred = await getBlurredCover(art);
             this.#coverImg.style = `background-image: url('${art}');`;
             this.#menuBox.style = `background-image: url('${blurred}');`;

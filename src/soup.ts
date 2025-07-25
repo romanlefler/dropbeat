@@ -39,6 +39,9 @@ export function freeSoup() : void {
     soup = null;
 }
 
+/**
+ * @throws Gio.ResolverError
+ */
 export async function fetchBytes(uri : string) : Promise<HttpResponse<Uint8Array>> {
     if(!soup) throw new Error("Soup not initialized.");
 
@@ -49,10 +52,14 @@ export async function fetchBytes(uri : string) : Promise<HttpResponse<Uint8Array
             GLib.PRIORITY_DEFAULT,
             null,
             (_s, result, _userData) => {
-                const status = msg.get_status();
-                const response = soup!.send_and_read_finish(result);
-                const data = response?.get_data();
-                resolve({ status, data });
+                try {
+                    const status = msg.get_status();
+                    const response = soup!.send_and_read_finish(result);
+                    const data = response?.get_data();
+                    resolve({ status, data });
+                } catch(e) {
+                    reject(e);
+                }
             }
         );
     });
