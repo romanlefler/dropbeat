@@ -47,6 +47,10 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
     };
 }
 
+export async function mediaTogglePause(name : string) : Promise<void> {
+    return;
+}
+
 export function mediaFree() : void {
     return;
 }

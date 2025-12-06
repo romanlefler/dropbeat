@@ -23,7 +23,7 @@ import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { gettext as extensionGettext } from "resource:///org/gnome/shell/extensions/extension.js";
 import { setUpGettext } from "./gettext.js";
-import { mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPlayer } from "./mpris.js";
+import { mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPlayer, mediaTogglePause } from "./mpris.js";
 import { Popup } from "./popup.js";
 import { setUpSoup, freeSoup } from "./soup.js";
 
@@ -92,7 +92,9 @@ export default class DropbeatExtension extends Extension {
         indic.add_child(layout);
 
         this.#popup?.free();
-        this.#popup = indic.menu instanceof PopupMenu.PopupMenu ? new Popup(indic.menu, this.metadata) : undefined;
+        if(indic.menu instanceof PopupMenu.PopupMenu) {
+            this.#popup = new Popup(indic.menu, this.metadata, mediaTogglePause);
+        } else this.#popup = undefined;
 
         this.#indicator?.destroy();
         this.#indicator = indic;
@@ -114,7 +116,7 @@ export default class DropbeatExtension extends Extension {
         else if(!this.#indicator) this.#createIndicator();
 
         if(info) {
-            this.#popup?.updateGui(info);
+            this.#popup?.updateGui(name, info);
         }
     }
 

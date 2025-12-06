@@ -39,6 +39,8 @@ function vSpacer(px : number) {
 
 export class Popup {
 
+    #mediaTogglePause : (name : string) => void;
+
     #metadata : ExtensionMetadata;
     #coverUri : string | null = null;
 
@@ -49,8 +51,14 @@ export class Popup {
     #coverImg : St.Widget;
     #title : St.Label;
     #artist : St.Label;
+    #pause : St.Button;
 
-    constructor(menu : PopupMenu.PopupMenu, metadata : ExtensionMetadata) {
+    #pauseHandler : number | null = null;
+    #oldPlayerName : string | null = null;
+
+    constructor(menu : PopupMenu.PopupMenu, metadata : ExtensionMetadata,
+               mediaTogglePause : (name : string) => void) {
+        this.#mediaTogglePause = mediaTogglePause;
         this.#metadata = metadata;
 
         const { w: screenW, h: screenH } = getScreenSize();
@@ -90,11 +98,17 @@ export class Popup {
             style_class: "dropbeat-artist",
             text: _g("No Artist")
         });
+        this.#pause = new St.Button({
+            style_class: "dropbeat-pause",
+            reactive: true,
+            can_focus: true,
+        });
         box.add_child(vSpacer(0));
         box.add_child(this.#coverBin);
         box.add_child(vSpacer(20));
         box.add_child(this.#title);
         box.add_child(this.#artist);
+        box.add_child(this.#pause);
 
         this.#menuItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
         this.#menuItem.actor.add_child(box);
@@ -110,11 +124,11 @@ export class Popup {
         this.#menuItem.destroy();
     }
 
-    updateGui(p : PlayerInfo) : void {
-        this.updateGuiAsync(p).catch(e => console.error(e));
+    updateGui(name : string, p : PlayerInfo) : void {
+        this.updateGuiAsync(name, p).catch(e => console.error(e));
     }
 
-    async updateGuiAsync(p : PlayerInfo) : Promise<void> {
+    async updateGuiAsync(name : string, p : PlayerInfo) : Promise<void> {
         this.#title.text = p.title || _g("No Title");
         this.#artist.text = p.artists?.join(_g(" / ")) || _g("No Artist");
 
@@ -138,6 +152,16 @@ export class Popup {
             this.#menuBox.style = `background-image: url('${blurred}');`;
         }
         this.#coverUri = uri;
+
+        if(this.#oldPlayerName !== name) {
+
+            if(this.#pauseHandler) this.#pause.disconnect(this.#pauseHandler);
+            this.#pauseHandler = this.#pause.connect("clicked", () => {
+                this.#mediaTogglePause(name);
+            });
+
+            this.#oldPlayerName = name;
+        }
     }
 
 }

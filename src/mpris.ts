@@ -162,6 +162,33 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
     }
 }
 
+export async function mediaTogglePause(name : string) : Promise<void> {
+    const proxy = proxies[name];
+    if(!proxy) throw new Error(`No proxy for media player ${name}`);
+    return new Promise<void>((resolve, reject) => {
+        proxy.call(
+            "PlayPause",
+            null,
+            Gio.DBusCallFlags.NONE,
+            -1,
+            null,
+            (p, result) =>
+            {
+                if(!p) throw new Error("Media player was NULL.");
+                try
+                {
+                    p.call_finish(result);
+                }
+                catch(e)
+                {
+                    throw new Error(`Toggle pause failed on player ${name}: ${e}`);
+                }
+                resolve();
+            }
+        );
+    });
+}
+
 export function mediaFree() : void {
     let id : number | undefined;
     while((id = subs.pop()) !== undefined) bus.signal_unsubscribe(id);
