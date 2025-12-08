@@ -52,6 +52,7 @@ export class Popup {
     #title : St.Label;
     #artist : St.Label;
     #pause : St.Button;
+    #pauseIcon : St.Icon;
 
     #pauseHandler : number | null = null;
     #oldPlayerName : string | null = null;
@@ -98,17 +99,35 @@ export class Popup {
             style_class: "dropbeat-artist",
             text: _g("No Artist")
         });
+
+        const pauseWrapper = new St.Widget({
+            width: 40,
+            height: 40,
+            x_expand: false,
+            y_expand: false,
+            x_align: Clutter.ActorAlign.CENTER,
+        });
+        this.#pauseIcon = new St.Icon({
+            icon_name: "media-playback-pause-symbolic",
+            icon_size: 40,
+            style_class: "system-status-icon"
+        });
         this.#pause = new St.Button({
             style_class: "dropbeat-pause",
             reactive: true,
             can_focus: true,
+            width: 40,
+            x_expand: false,
+            child: this.#pauseIcon
         });
+
+        pauseWrapper.add_child(this.#pause);
         box.add_child(vSpacer(0));
         box.add_child(this.#coverBin);
         box.add_child(vSpacer(20));
         box.add_child(this.#title);
         box.add_child(this.#artist);
-        box.add_child(this.#pause);
+        box.add_child(pauseWrapper);
 
         this.#menuItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
         this.#menuItem.actor.add_child(box);
@@ -152,6 +171,13 @@ export class Popup {
             this.#menuBox.style = `background-image: url('${blurred}');`;
         }
         this.#coverUri = uri;
+
+        console.error(`updating with ts status ${p.status}`)
+        if(p.status === "Paused" || p.status === "Stopped") {
+            this.#pauseIcon.icon_name = "media-playback-start-symbolic";
+        } else {
+            this.#pauseIcon.icon_name = "media-playback-pause-symbolic";
+        }
 
         if(this.#oldPlayerName !== name) {
 

@@ -108,7 +108,7 @@ async function createProxy(name : string) : Promise<Gio.DBusProxy> {
 function mediaChanged(proxy : Gio.DBusProxy, callback : () => void) : void {
     proxy.connect("g-properties-changed", (_, props) => {
         const changed : string[] = props.deep_unpack();
-        if("Metadata" in changed) callback();
+        if("Metadata" in changed || "PlaybackStatus" in changed) callback();
     });
 }
 
@@ -122,12 +122,19 @@ export interface PlayerInfo {
     release : Date | null;
     artUrl : string | null;
     seconds : number | null;
+    status : "Playing" | "Paused" | "Stopped" | null;
 }
 
 export function mediaQueryPlayer(name : string) : PlayerInfo | null {
     try {
         const proxy = proxies[name];
         if(!proxy) throw new Error(`No proxy for media player ${name}`);
+
+        const statusV = proxy.get_cached_property("PlaybackStatus");
+        const status = statusV?.deep_unpack() as string ?? null;
+        if(status !== "Playing" && status !== "Paused" && status !== "Stopped" && status !== null) {
+            throw new Error(`Unknown playback status "${status}" for media player ${name}`);
+        }
 
         const metaV = proxy.get_cached_property("Metadata");
         if(!metaV) throw new Error(`No metadata for media player ${name}`);
@@ -153,7 +160,8 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
             genres: meta["xesam:genre"]?.deep_unpack() ?? null,
             release: date ? new Date(date) : null,
             artUrl: str(meta["mpris:artUrl"]),
-            seconds: sec ? sec / 1000000 : null
+            seconds: sec ? sec / 1000000 : null,
+            status: status
         };
         
     } catch(e) {

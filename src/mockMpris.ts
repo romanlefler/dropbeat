@@ -43,7 +43,8 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
         artUrl: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm." +
             "bing.net%2Fth%2Fid%2FOIP.kVjNx2oThEosDC-GPybDPQHaHa%3Fpid%3DApi&f=1&ipt=" +
             "c808b452cde05f49638bef772359332dd1aa2c16bfacb1bd03d2bc4efb6d723d&ipo=images",
-        seconds: 207
+        seconds: 207,
+        status: "Paused"
     };
 }
 
