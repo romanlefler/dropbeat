@@ -28,8 +28,19 @@
     font-size: 1.25em;
 }
 
+.dropbeat-controls-bar {
+    margin-top: 0.25em;
+}
+
 .dropbeat-pause {
-    width: 40px;
-    height: 40px;
+    margin: 0px 20px;
+}
+
+.dropbeat-control {
+    border-radius: 10px;
+}
+
+.dropbeat-control:hover {
+    background-color: rgba(0, 0, 0, 0.4);
 }
 

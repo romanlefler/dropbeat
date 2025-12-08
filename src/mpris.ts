@@ -170,31 +170,43 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
     }
 }
 
-export async function mediaTogglePause(name : string) : Promise<void> {
+async function mediaCallMethod(name : string, method : string) : Promise<void> {
     const proxy = proxies[name];
-    if(!proxy) throw new Error(`No proxy for media player ${name}`);
+    if(!proxy) throw new Error(`No proxy for media player ${name}.`);
     return new Promise<void>((resolve, reject) => {
         proxy.call(
-            "PlayPause",
+            method,
             null,
             Gio.DBusCallFlags.NONE,
             -1,
             null,
             (p, result) =>
             {
-                if(!p) throw new Error("Media player was NULL.");
+                if(!p) return reject("Media player was NULL.");
                 try
                 {
                     p.call_finish(result);
                 }
                 catch(e)
                 {
-                    throw new Error(`Toggle pause failed on player ${name}: ${e}`);
+                    return reject(new Error(`Toggle pause failed on player ${name}: ${e}`));
                 }
                 resolve();
             }
         );
     });
+};
+
+export async function mediaTogglePause(name : string) : Promise<void> {
+    return mediaCallMethod(name, "PlayPause");
+}
+
+export async function mediaPrev(name : string) : Promise<void> {
+    return mediaCallMethod(name, "Previous");
+}
+
+export async function mediaNext(name : string) : Promise<void> {
+    return mediaCallMethod(name, "Next");
 }
 
 export function mediaFree() : void {

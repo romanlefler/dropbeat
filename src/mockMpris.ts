@@ -56,6 +56,14 @@ export async function mediaTogglePause(name : string) : Promise<void> {
     changedHandler?.(name);
 }
 
+export async function mediaPrev(name : string) : Promise<void> {
+    return;
+}
+
+export async function mediaNext(name : string) : Promise<void> {
+    return;
+}
+
 export function mediaFree() : void {
     return;
 }

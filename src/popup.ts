@@ -37,9 +37,19 @@ function vSpacer(px : number) {
     return new St.Bin({ height: px, margin_top: 0, margin_bottom: 0 });
 }
 
+interface PopupCtorArgs {
+    menu : PopupMenu.PopupMenu;
+    metadata : ExtensionMetadata;
+    mediaTogglePause : (name : string) => Promise<void>;
+    mediaPrev : (name : string) => Promise<void>;
+    mediaNext : (name : string) => Promise<void>;
+};
+
 export class Popup {
 
     #mediaTogglePause : (name : string) => void;
+    #mediaPrev : (name : string) => void;
+    #mediaNext : (name : string) => void;
 
     #metadata : ExtensionMetadata;
     #coverUri : string | null = null;
@@ -51,16 +61,19 @@ export class Popup {
     #coverImg : St.Widget;
     #title : St.Label;
     #artist : St.Label;
-    #pause : St.Button;
+
+    #pauseButton : St.Button;
     #pauseIcon : St.Icon;
+    #prevButton : St.Button;
+    #nextButton : St.Button;
 
-    #pauseHandler : number | null = null;
-    #oldPlayerName : string | null = null;
+    #playerName : string | null = null;
 
-    constructor(menu : PopupMenu.PopupMenu, metadata : ExtensionMetadata,
-               mediaTogglePause : (name : string) => void) {
-        this.#mediaTogglePause = mediaTogglePause;
-        this.#metadata = metadata;
+    constructor(a : PopupCtorArgs) {
+        this.#mediaPrev = a.mediaPrev;
+        this.#mediaNext = a.mediaNext;
+        this.#mediaTogglePause = a.mediaTogglePause;
+        this.#metadata = a.metadata;
 
         const { w: screenW, h: screenH } = getScreenSize();
         const szMin = Math.min(screenW, screenH);
@@ -100,43 +113,112 @@ export class Popup {
             text: _g("No Artist")
         });
 
-        const pauseWrapper = new St.Widget({
-            width: 40,
-            height: 40,
-            x_expand: false,
-            y_expand: false,
-            x_align: Clutter.ActorAlign.CENTER,
+        const barWidgets = Popup.createControlsBar();
+        const controlsBar = barWidgets.bar;
+        this.#pauseIcon = barWidgets.pauseIcon;
+        this.#pauseButton = barWidgets.pauseButton;
+        this.#prevButton = barWidgets.prevButton;
+        this.#nextButton = barWidgets.nextButton;
+
+        this.#prevButton.connect("clicked", () => {
+            const name = this.#playerName;
+            if(name) this.#mediaPrev(name);
         });
-        this.#pauseIcon = new St.Icon({
-            icon_name: "media-playback-pause-symbolic",
-            icon_size: 40,
-            style_class: "system-status-icon"
+        this.#pauseButton.connect("clicked", () => {
+            const name = this.#playerName;
+            if(name) this.#mediaTogglePause(name);
         });
-        this.#pause = new St.Button({
-            style_class: "dropbeat-pause",
-            reactive: true,
-            can_focus: true,
-            width: 40,
-            x_expand: false,
-            child: this.#pauseIcon
+        this.#nextButton.connect("clicked", () => {
+            const name = this.#playerName;
+            if(name) this.#mediaNext(name);
         });
 
-        pauseWrapper.add_child(this.#pause);
         box.add_child(vSpacer(0));
         box.add_child(this.#coverBin);
         box.add_child(vSpacer(20));
         box.add_child(this.#title);
         box.add_child(this.#artist);
-        box.add_child(pauseWrapper);
+        box.add_child(controlsBar);
 
         this.#menuItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
         this.#menuItem.actor.add_child(box);
 
-        menu.addMenuItem(this.#menuItem);
+        a.menu.addMenuItem(this.#menuItem);
         
-        menu.box.set_size(w, h);
-        menu.box.add_style_class_name("dropbeat-menu");
-        this.#menuBox = menu.box;
+        a.menu.box.set_size(w, h);
+        a.menu.box.add_style_class_name("dropbeat-menu");
+        this.#menuBox = a.menu.box;
+    }
+
+    private static createControlsBar() {
+        const bar = new St.BoxLayout({
+            vertical: false,
+            height: 40,
+            x_expand: true,
+            y_expand: false,
+            x_align: Clutter.ActorAlign.CENTER,
+            style_class: "dropbeat-controls-bar"
+        });
+
+        const pauseIcon = new St.Icon({
+            icon_name: "media-playback-pause-symbolic",
+            icon_size: 40,
+            style_class: "system-status-icon"
+        });
+        const pauseButton = new St.Button({
+            style_class: "dropbeat-pause dropbeat-control",
+            reactive: true,
+            can_focus: true,
+            width: 40,
+            height: 40,
+            x_expand: false,
+            x_align: Clutter.ActorAlign.CENTER,
+            child: pauseIcon
+        });
+
+        const prevIcon = new St.Icon({
+            icon_name: "media-skip-backward-symbolic",
+            icon_size: 40,
+            style_class: "system-status-icon"
+        });
+        const prevButton = new St.Button({
+            style_class: "dropbeat-prev dropbeat-control",
+            reactive: true,
+            can_focus: true,
+            width: 40,
+            height: 40,
+            x_expand: false,
+            x_align: Clutter.ActorAlign.START,
+            child: prevIcon
+        });
+
+        const nextIcon = new St.Icon({
+            icon_name: "media-skip-forward-symbolic",
+            icon_size: 40,
+            style_class: "system-status-icon"
+        });
+        const nextButton = new St.Button({
+            style_class: "dropbeat-next dropbeat-control",
+            reactive: true,
+            can_focus: true,
+            width: 40,
+            height: 40,
+            x_expand: false,
+            x_align: Clutter.ActorAlign.END,
+            child: nextIcon
+        });
+
+        bar.add_child(prevButton);
+        bar.add_child(pauseButton);
+        bar.add_child(nextButton);
+
+        return {
+            bar,
+            pauseIcon,
+            pauseButton,
+            prevButton,
+            nextButton
+        };
     }
 
     free() {
@@ -148,6 +230,8 @@ export class Popup {
     }
 
     async updateGuiAsync(name : string, p : PlayerInfo) : Promise<void> {
+        this.#playerName = name;
+
         this.#title.text = p.title || _g("No Title");
         this.#artist.text = p.artists?.join(_g(" / ")) || _g("No Artist");
 
@@ -176,16 +260,6 @@ export class Popup {
             this.#pauseIcon.icon_name = "media-playback-start-symbolic";
         } else {
             this.#pauseIcon.icon_name = "media-playback-pause-symbolic";
-        }
-
-        if(this.#oldPlayerName !== name) {
-
-            if(this.#pauseHandler) this.#pause.disconnect(this.#pauseHandler);
-            this.#pauseHandler = this.#pause.connect("clicked", () => {
-                this.#mediaTogglePause(name);
-            });
-
-            this.#oldPlayerName = name;
         }
     }
 
