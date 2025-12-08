@@ -172,7 +172,6 @@ export class Popup {
         }
         this.#coverUri = uri;
 
-        console.error(`updating with ts status ${p.status}`)
         if(p.status === "Paused" || p.status === "Stopped") {
             this.#pauseIcon.icon_name = "media-playback-start-symbolic";
         } else {

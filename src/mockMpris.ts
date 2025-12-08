@@ -21,10 +21,13 @@ import { PlayerInfo, PlayerCallback } from "./mpris.js";
 
 export type { PlayerInfo, PlayerCallback } from "./mpris.js"
 
+let isPlaying : boolean = true;
+let changedHandler : PlayerCallback | null = null;
+
 export function mediaLaunched(
-    _started : PlayerCallback, _exited : PlayerCallback, _changed : PlayerCallback
+    _started : PlayerCallback, _exited : PlayerCallback, changed : PlayerCallback
 ) : void {
-    return;
+    changedHandler = changed;
 }
 
 export async function getMediaPlayers() : Promise<string[]> {
@@ -44,12 +47,13 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
             "bing.net%2Fth%2Fid%2FOIP.kVjNx2oThEosDC-GPybDPQHaHa%3Fpid%3DApi&f=1&ipt=" +
             "c808b452cde05f49638bef772359332dd1aa2c16bfacb1bd03d2bc4efb6d723d&ipo=images",
         seconds: 207,
-        status: "Paused"
+        status: isPlaying ? "Playing" : "Paused"
     };
 }
 
 export async function mediaTogglePause(name : string) : Promise<void> {
-    return;
+    isPlaying = !isPlaying;
+    changedHandler?.(name);
 }
 
 export function mediaFree() : void {
