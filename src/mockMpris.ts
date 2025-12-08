@@ -17,12 +17,17 @@
 
 // This is a mock implementation of mpris.ts so you don't have to actually run a media player
 
+import Gio from "gi://Gio";
 import { PlayerInfo, PlayerCallback } from "./mpris.js";
 
 export type { PlayerInfo, PlayerCallback } from "./mpris.js"
 
 let isPlaying : boolean = true;
 let changedHandler : PlayerCallback | null = null;
+
+export function setBusSession(bus : Gio.DBusConnection | null) {
+    return;
+}
 
 export function mediaLaunched(
     _started : PlayerCallback, _exited : PlayerCallback, changed : PlayerCallback

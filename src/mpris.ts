@@ -19,16 +19,23 @@ import Gio from "gi://Gio";
 import GLib from "gi://GLib";
 import { str, i64 } from "./gvariant.js";
 
-let bus = Gio.DBus.session;
+let bus : Gio.DBusConnection | null = null;
 
-const proxies : Record<string, Gio.DBusProxy> = { };
-const subs : number[] = [ ];
+let proxies : Record<string, Gio.DBusProxy> = { };
+let subs : number[] = [ ];
 
 export type PlayerCallback = (name : string) => void;
+
+export function setBusSession(dbusSession : Gio.DBusConnection | null) {
+    bus = dbusSession;
+    proxies = { };
+    subs = [ ];
+}
 
 export function mediaLaunched(
     started : PlayerCallback, exited : PlayerCallback, changed : PlayerCallback
 ) : void {
+    if(!bus) throw new Error("Set bus session first.");
     const id = bus.signal_subscribe(
         "org.freedesktop.DBus",
         "org.freedesktop.DBus",
@@ -62,6 +69,7 @@ export function mediaLaunched(
 
 export async function getMediaPlayers() : Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
+        if(!bus) throw new Error("Set bus session first.");
         bus.call(
             "org.freedesktop.DBus",
             "/org/freedesktop/DBus",
@@ -74,6 +82,7 @@ export async function getMediaPlayers() : Promise<string[]> {
             null,
             (_conn, result) => {
                 try {
+                    if(!bus) return reject(new Error("Bus set to NULL before response."));
                     const namesV = bus.call_finish(result);
                     const names : string[] = (namesV.deep_unpack() as any)[0];
                     const players = names.filter(s => s.startsWith("org.mpris.MediaPlayer2."));
@@ -89,6 +98,7 @@ export async function getMediaPlayers() : Promise<string[]> {
 
 async function createProxy(name : string) : Promise<Gio.DBusProxy> {
     return new Promise<Gio.DBusProxy>((resolve, reject) => {
+        if(!bus) return reject(new Error("Set bus session first."));
         Gio.DBusProxy.new(
             bus,
             Gio.DBusProxyFlags.NONE,
@@ -211,11 +221,12 @@ export async function mediaNext(name : string) : Promise<void> {
 
 export function mediaFree() : void {
     let id : number | undefined;
-    while((id = subs.pop()) !== undefined) bus.signal_unsubscribe(id);
+    if(bus) {
+        while((id = subs.pop()) !== undefined) bus.signal_unsubscribe(id);
+    }
 
-    for(const p in proxies) delete proxies[p];
-
-    // @ts-ignore
+    proxies = { };
+    subs = [ ];
     bus = null;
 }
 
