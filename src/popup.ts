@@ -17,6 +17,7 @@
 
 import Clutter from "gi://Clutter";
 import Gio from "gi://Gio";
+import Meta from "gi://Meta";
 import St from "gi://St";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
@@ -35,6 +36,18 @@ function getScreenSize() : { w : number, h : number} {
 
 function vSpacer(px : number) {
     return new St.Bin({ height: px, margin_top: 0, margin_bottom: 0 });
+}
+
+// Widget must have reactive and track_hover true
+function setPointer(widget : Clutter.Actor) : void {
+    if(Meta.Cursor.POINTER && Meta.Cursor.DEFAULT) {
+        widget.connect("enter-event", () => {
+            global.display.set_cursor(Meta.Cursor.POINTER);
+        });
+        widget.connect("leave-event", () => {
+            global.display.set_cursor(Meta.Cursor.DEFAULT);
+        });
+    }
 }
 
 interface PopupCtorArgs {
@@ -169,12 +182,14 @@ export class Popup {
             style_class: "dropbeat-pause dropbeat-control",
             reactive: true,
             can_focus: true,
+            track_hover: true,
             width: 40,
             height: 40,
             x_expand: false,
             x_align: Clutter.ActorAlign.CENTER,
             child: pauseIcon
         });
+        setPointer(pauseButton);
 
         const prevIcon = new St.Icon({
             icon_name: "media-skip-backward-symbolic",
@@ -191,6 +206,7 @@ export class Popup {
             x_align: Clutter.ActorAlign.START,
             child: prevIcon
         });
+        setPointer(prevButton);
 
         const nextIcon = new St.Icon({
             icon_name: "media-skip-forward-symbolic",
@@ -207,6 +223,7 @@ export class Popup {
             x_align: Clutter.ActorAlign.END,
             child: nextIcon
         });
+        setPointer(nextButton);
 
         bar.add_child(prevButton);
         bar.add_child(pauseButton);
