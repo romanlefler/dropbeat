@@ -26,6 +26,7 @@ import { setUpGettext } from "./gettext.js";
 import { setBusSession, mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPlayer, mediaTogglePause, mediaPrev, mediaNext } from "./mpris.js";
 import { Popup } from "./popup.js";
 import { setUpSoup, freeSoup } from "./soup.js";
+import { keybindingSetup, keybindingCleanup } from "./keybinding.js";
 
 export default class DropbeatExtension extends Extension {
 
@@ -52,6 +53,10 @@ export default class DropbeatExtension extends Extension {
         }, name => {
             this.#mediaChanged(name);
         });
+        keybindingSetup(
+            this.#gsettings,
+            this.#openMenuKeybind.bind(this)
+        );
 
         this.#enableAsync().catch(err => {
             console.error(`Error when enabling Dropbeat: ${err}`);
@@ -66,12 +71,17 @@ export default class DropbeatExtension extends Extension {
         }
     }
 
+    #openMenuKeybind() : void {
+        this.#indicator?.menu.toggle();
+    }
+
     /**
      * Called by GNOME Extensions when this extension is disabled.
      */
     disable() : void {
         freeSoup();
         mediaFree();
+        keybindingCleanup();
 
         this.#destroyIndicator();
 
