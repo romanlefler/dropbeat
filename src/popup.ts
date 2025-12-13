@@ -254,7 +254,7 @@ export class Popup {
 
         let uri : string;
         if(p.artUrl) uri = p.artUrl;
-        else uri = this.#metadata.path + "/music.png";
+        else uri = `file://${this.#metadata.path}/music.png`;
 
         if(this.#coverUri !== uri && uri) {
             let art : string, blurred : string;

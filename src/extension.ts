@@ -30,7 +30,7 @@ import { keybindingSetup, keybindingCleanup } from "./keybinding.js";
 
 export default class DropbeatExtension extends Extension {
 
-    #gsettings? : Gio.Settings;
+    #gsettings! : Gio.Settings;
     #popup? : Popup;
     #indicator? : PanelMenu.Button;
     #panelIcon? : St.Icon;
@@ -69,6 +69,13 @@ export default class DropbeatExtension extends Extension {
             this.#createIndicator();
             this.#mediaChanged(players[0]);
         }
+
+        this.#gsettings.connect("changed", (_, k) => {
+            if(k === "open-menu-keybinding") {
+                keybindingCleanup();
+                keybindingSetup(this.#gsettings, this.#openMenuKeybind.bind(this));
+            }
+        });
     }
 
     #openMenuKeybind() : void {
@@ -85,7 +92,7 @@ export default class DropbeatExtension extends Extension {
 
         this.#destroyIndicator();
 
-        this.#gsettings = undefined;
+        this.#gsettings = undefined!;
     }
 
     #createIndicator() : void {

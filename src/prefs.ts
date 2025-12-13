@@ -20,12 +20,13 @@ import Gio from "gi://Gio";
 import Gdk from "gi://Gdk";
 import Gtk from "gi://Gtk";
 
-import { ExtensionPreferences } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 import { ExtensionMetadata } from "resource:///org/gnome/shell/extensions/extension.js";
-import { gettext as prefsGettext } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
-import { setUpGettext } from "./gettext.js";
+import { ExtensionPreferences } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
+import { GeneralPage } from "./preferences/generalPage.js";
+import { AboutPage } from "./preferences/aboutPage.js";
+import { gettext as _g } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
-export default class DropbeatPreferences extends ExtensionPreferences {
+export default class SimpleWeatherPreferences extends ExtensionPreferences {
 
     readonly #metadata : ExtensionMetadata;
 
@@ -35,9 +36,22 @@ export default class DropbeatPreferences extends ExtensionPreferences {
     }
 
     async fillPreferencesWindow(window: Adw.PreferencesWindow): Promise<void> {
-        setUpGettext(prefsGettext);
         const settings = this.getSettings();
         settings.delay();
-    }
 
+        const gdkDisplay = Gdk.Display.get_default();
+        if(!gdkDisplay) throw new Error("No GDK display detected.");
+        const cssProv = new Gtk.CssProvider();
+        const cssFile = this.#metadata.dir.get_child("prefs.css");
+        cssProv.load_from_file(cssFile);
+        Gtk.StyleContext.add_provider_for_display(
+            gdkDisplay,
+            cssProv,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        );
+
+        window.add(new GeneralPage(settings));
+        window.add(new AboutPage(settings, this.#metadata, window));
+
+    }
 }
