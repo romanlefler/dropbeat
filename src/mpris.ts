@@ -17,7 +17,7 @@
 
 import Gio from "gi://Gio";
 import GLib from "gi://GLib";
-import { str, i64 } from "./gvariant.js";
+import { str, i64, i32 } from "./gvariant.js";
 
 let bus : Gio.DBusConnection | null = null;
 
@@ -165,8 +165,8 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
             title: str(meta["xesam:title"]),
             artists: meta["xesam:artist"]?.deep_unpack() ?? null,
             album: str(meta["xesam:album"]),
-            trackN: i64(meta["xesam:trackNumber"]),
-            discN: i64(meta["xesam:discNumber"]),
+            trackN: i32(meta["xesam:trackNumber"]),
+            discN: i32(meta["xesam:discNumber"]),
             genres: meta["xesam:genre"]?.deep_unpack() ?? null,
             release: date ? new Date(date) : null,
             artUrl: str(meta["mpris:artUrl"]),

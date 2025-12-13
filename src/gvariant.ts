@@ -27,3 +27,8 @@ export function i64(nv : GLib.Variant | undefined | null) : number | null {
     return nv.get_int64();
 }
 
+export function i32(nv : GLib.Variant | undefined | null) : number | null {
+    if(!nv) return null;
+    return nv.get_int32();
+}
+
