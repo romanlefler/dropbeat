@@ -2,7 +2,7 @@
 <schemalist>
     <schema id="org.gnome.shell.extensions.dropbeat" path="/org/gnome/shell/extensions/dropbeat/">
         <key name="open-menu-keybinding" type="as">
-            <default>["&lt;Super&gt;P"]</default>
+            <default>["&lt;Super&gt;I"]</default>
             <summary>Keyboard shortcut to open menu</summary>
         </key>
     </schema>
