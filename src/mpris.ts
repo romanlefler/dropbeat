@@ -19,12 +19,13 @@ import Gio from "gi://Gio";
 import GLib from "gi://GLib";
 import { str, i64, i32 } from "./gvariant.js";
 
+export type PlayerCallback = (name : string) => void;
+
 let bus : Gio.DBusConnection | null = null;
+let mediaChangedCallback: PlayerCallback | null = null;
 
 let proxies : Record<string, Gio.DBusProxy> = { };
 let subs : number[] = [ ];
-
-export type PlayerCallback = (name : string) => void;
 
 export function setBusSession(dbusSession : Gio.DBusConnection | null) {
     bus = dbusSession;
@@ -32,10 +33,11 @@ export function setBusSession(dbusSession : Gio.DBusConnection | null) {
     subs = [ ];
 }
 
-export function mediaLaunched(
+export async function mediaLaunched(
     started : PlayerCallback, exited : PlayerCallback, changed : PlayerCallback
-) : void {
+) : Promise<void> {
     if(!bus) throw new Error("Set bus session first.");
+    mediaChangedCallback = changed;
     const id = bus.signal_subscribe(
         "org.freedesktop.DBus",
         "org.freedesktop.DBus",
@@ -65,6 +67,9 @@ export function mediaLaunched(
         }
     );
     subs.push(id);
+
+    // Add change handlers and add proxies for existing players
+    getMediaPlayers();
 }
 
 export async function getMediaPlayers() : Promise<string[]> {
@@ -80,15 +85,22 @@ export async function getMediaPlayers() : Promise<string[]> {
             Gio.DBusCallFlags.NONE,
             -1,
             null,
-            (_conn, result) => {
+            async (_conn, result) => {
                 try {
                     if(!bus) return reject(new Error("Bus set to NULL before response."));
                     const namesV = bus.call_finish(result);
                     const names : string[] = (namesV.deep_unpack() as any)[0];
                     const players = names.filter(s => s.startsWith("org.mpris.MediaPlayer2."));
+                    // If there were players before the extension started they wont be in the proxy list yet
+                    for(let p of players) {
+                        if(!(p in proxies)) {
+                            proxies[p] = await createProxy(p);
+                            mediaChanged(proxies[p], () => mediaChangedCallback?.(p));
+                        }
+                    }
                     resolve(players);
                 } catch (e) {
-                    console.error(`Failed to list media players: ${e}`);
+                    console.error(`Dropbeat: Failed to list media players: ${e}`);
                     resolve([ ]);
                 }
             }
@@ -175,7 +187,7 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
         };
         
     } catch(e) {
-        console.error(`Failed to query media player ${name}: ${e}`);
+        console.error(`Dropbeat: Failed to query media player ${name}: ${e}`);
         return null;
     }
 }

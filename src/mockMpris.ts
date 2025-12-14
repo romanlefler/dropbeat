@@ -29,9 +29,9 @@ export function setBusSession(bus : Gio.DBusConnection | null) {
     return;
 }
 
-export function mediaLaunched(
+export async function mediaLaunched(
     _started : PlayerCallback, _exited : PlayerCallback, changed : PlayerCallback
-) : void {
+) : Promise<void> {
     changedHandler = changed;
 }
 

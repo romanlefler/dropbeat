@@ -35,6 +35,8 @@ export default class DropbeatExtension extends Extension {
     #indicator? : PanelMenu.Button;
     #panelIcon? : St.Icon;
 
+    #settingsHandler : number | undefined;
+
     /**
      * Called by GNOME Extensions when this extension is enabled.
      * This is the entry point.
@@ -45,14 +47,6 @@ export default class DropbeatExtension extends Extension {
         this.#gsettings = this.getSettings();
 
         setBusSession(Gio.DBus.session);
-        mediaLaunched(name => {
-            this.#mediaChanged(name);
-        }, name => {
-            this.#destroyIndicator();
-            this.#mediaChanged(name);
-        }, name => {
-            this.#mediaChanged(name);
-        });
         keybindingSetup(
             this.#gsettings,
             this.#openMenuKeybind.bind(this)
@@ -64,13 +58,22 @@ export default class DropbeatExtension extends Extension {
     }
 
     async #enableAsync() : Promise<void> {
+        await mediaLaunched(name => {
+            this.#mediaChanged(name);
+        }, name => {
+            this.#destroyIndicator();
+            this.#mediaChanged(name);
+        }, name => {
+            this.#mediaChanged(name);
+        });
+
         const players = await getMediaPlayers();
         if(players.length > 0) {
             this.#createIndicator();
             this.#mediaChanged(players[0]);
         }
 
-        this.#gsettings.connect("changed", (_, k) => {
+        this.#settingsHandler = this.#gsettings.connect("changed", (_, k) => {
             if(k === "open-menu-keybinding") {
                 keybindingCleanup();
                 keybindingSetup(this.#gsettings, this.#openMenuKeybind.bind(this));
@@ -86,6 +89,10 @@ export default class DropbeatExtension extends Extension {
      * Called by GNOME Extensions when this extension is disabled.
      */
     disable() : void {
+        if(this.#settingsHandler !== undefined) {
+            this.#gsettings.disconnect(this.#settingsHandler);
+            this.#settingsHandler = undefined;
+        }
         freeSoup();
         mediaFree();
         keybindingCleanup();
@@ -96,7 +103,7 @@ export default class DropbeatExtension extends Extension {
     }
 
     #createIndicator() : void {
-        const indic = new PanelMenu.Button(0, "Weather", false);
+        const indic = new PanelMenu.Button(0, "Dropbeat", false);
         const layout = new St.BoxLayout({
             vertical: false
         });
@@ -126,11 +133,11 @@ export default class DropbeatExtension extends Extension {
     }
 
     #destroyIndicator() : void {
+        this.#popup?.free();
+        this.#popup = undefined;
         this.#panelIcon = undefined;
         this.#indicator?.destroy();
         this.#indicator = undefined;
-        this.#popup?.free();
-        this.#popup = undefined;
     }
 
     #mediaChanged(name : string) : void {
