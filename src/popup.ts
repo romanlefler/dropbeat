@@ -240,6 +240,7 @@ export class Popup {
 
     free() {
         this.#menuItem.destroy();
+        this.#menuItem = null!;
     }
 
     updateGui(name : string, p : PlayerInfo) : void {
