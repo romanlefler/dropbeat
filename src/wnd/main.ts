@@ -25,9 +25,34 @@
  */
 
 import Gio from "gi://Gio";
+import Gdk from "gi://Gdk?version=4.0";
 import Gtk from "gi://Gtk?version=4.0";
 
 const APP_ID = "com.roman.Dropbeat.Wnd";
+
+function attachHandlers(app: Gtk.Application, wnd: Gtk.ApplicationWindow) {
+    wnd.connect("close-request", () =>
+    {
+        app.quit();
+        return false;
+    });
+
+    const click = new Gtk.GestureClick();
+    click.connect("pressed", () => {
+        wnd.close();
+    });
+    wnd.add_controller(click);
+
+    const keys = new Gtk.EventControllerKey();
+    keys.connect("key-pressed", (_c, keyval) => {
+        if(keyval === Gdk.KEY_Escape) {
+            wnd.close();
+            return true;
+        }
+        return false;
+    });
+    wnd.add_controller(keys);
+}
 
 function main(argv: string[])
 {
@@ -53,11 +78,7 @@ function main(argv: string[])
 
         wnd.set_child(box);
 
-        wnd.connect("close-request", () =>
-        {
-            app.quit();
-            return false;
-        });
+        attachHandlers(app, wnd);
 
         wnd.present();
         wnd.fullscreen();
