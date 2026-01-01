@@ -35,7 +35,7 @@ else
 	INSTALLBASE = $(SHARE_PREFIX)/gnome-shell/extensions
 endif
 
-.PHONY: out pack install clean ts
+.PHONY: out pack install clean ts update-po
 
 out: $(POT) ts $(SCHEMAOUT) $(SCHEMACP) $(STATICOUT) $(MOS)
 
@@ -83,8 +83,7 @@ $(BUILD)/extension.js $(BUILD)/resources.js: $(SRCS) ./node_modules/.package-loc
 
 $(SCHEMAOUT): $(SCHEMASRC)
 	@printf -- 'NEEDED: glib-compile-schemas\n'
-	mkdir -p $(SCHEMAOUTDIR)
-	glib-compile-schemas $(SCHEMAS) --targetdir=$(SCHEMAOUTDIR) --strict
+	glib-compile-schemas $(SCHEMAS) --dry-run --strict
 
 $(SCHEMACP): $(SCHEMASRC)
 	mkdir -p $(SCHEMAOUTDIR)
@@ -112,4 +111,19 @@ $(ZIP): out
 	@printf -- 'NEEDED: zip\n'
 	mkdir -p $(DIST)
 	(cd $(BUILD) && zip ../../$(ZIP) -9r ./)
+
+# Updates all existing po files by merging them with the pot.
+# If already present, the pot is removed and recreated.
+update-po:
+	rm -f $(POT); \
+		$(MAKE) pot
+	@printf -- 'NEEDED: gettext\n'
+	@if [ -n "$$(ls -A $(PO)/*.po 2>/dev/null)" ]; then \
+		for f in $(POFILES); do \
+		printf -- 'Merging %s with $(POT) ' "$$f"; \
+		msgmerge --no-fuzzy-matching --update --backup=none $$f $(POT); \
+		done; \
+		else \
+		printf -- 'Unsuccessful PO update: there are no PO files\n'; \
+		fi
 
