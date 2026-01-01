@@ -20,7 +20,7 @@ import Gtk from "gi://Gtk";
 import Gio from "gi://Gio";
 import Adw from "gi://Adw";
 import { gettext as _g } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
-import { ShortcutRow } from "../shortcutrow.js";
+import { ShortcutRow } from "./shortcutrow.js";
 
 function setVisibilites(value : boolean, ...widgets : Gtk.Widget[]) {
     for(let w of widgets) w.visible = value;
