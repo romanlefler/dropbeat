@@ -152,5 +152,5 @@ export class ShortcutRow extends Adw.ActionRow {
     addValueChangedListener(callback : ValueChangedCallback) : void {
         this.#valueChangedCallbacks.push(callback);
     }
-};
+}
 
