@@ -1,5 +1,5 @@
 /*
-    Copyright 2025 Roman Lefler
+    Copyright 2025-2026 Roman Lefler
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ import Gio from "gi://Gio";
 import Gdk from "gi://Gdk?version=4.0";
 import Gtk from "gi://Gtk?version=4.0";
 
-const APP_ID = "com.roman.Dropbeat.Wnd";
+const APP_ID = "com.romanlefler.Dropbeat.Wnd";
 
 function attachHandlers(app: Gtk.Application, wnd: Gtk.ApplicationWindow) {
     wnd.connect("close-request", () =>
@@ -74,7 +74,7 @@ function main(argv: string[])
         {
             orientation: Gtk.Orientation.VERTICAL,
         });
-        box.append(new Gtk.Label({ label: "Dropbeat Fullscreen" }));
+        box.append(new Gtk.Label({ label: argv.join(" | ") }));
 
         wnd.set_child(box);
 

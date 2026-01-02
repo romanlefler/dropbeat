@@ -27,6 +27,7 @@ import { setBusSession, mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPla
 import { Popup } from "./popup.js";
 import { setUpSoup, freeSoup } from "./soup.js";
 import { keybindingSetup, keybindingCleanup } from "./keybinding.js";
+import { WndBus } from "./wndbus.js";
 
 export default class DropbeatExtension extends Extension {
 
@@ -34,6 +35,7 @@ export default class DropbeatExtension extends Extension {
     #popup? : Popup;
     #indicator? : PanelMenu.Button;
     #panelIcon? : St.Icon;
+    #wndBus? : WndBus;
 
     #settingsHandler : number | undefined;
 
@@ -46,6 +48,7 @@ export default class DropbeatExtension extends Extension {
         setUpSoup();
         this.#gsettings = this.getSettings();
 
+        this.#wndBus = new WndBus(this);
         setBusSession(Gio.DBus.session);
         keybindingSetup(
             this.#gsettings,
@@ -93,6 +96,8 @@ export default class DropbeatExtension extends Extension {
             this.#gsettings.disconnect(this.#settingsHandler);
             this.#settingsHandler = undefined;
         }
+        this.#wndBus?.free();
+        this.#wndBus = undefined;
         freeSoup();
         mediaFree();
         keybindingCleanup();
@@ -118,9 +123,11 @@ export default class DropbeatExtension extends Extension {
 
         this.#popup?.free();
         if(indic.menu instanceof PopupMenu.PopupMenu) {
+            if(!this.#wndBus) throw new Error("Dropbeat: WndBus is undefined in createIndicator.");
             this.#popup = new Popup({
                 menu: indic.menu,
                 metadata: this.metadata,
+                wndBus: this.#wndBus,
                 mediaTogglePause,
                 mediaPrev,
                 mediaNext

@@ -25,6 +25,7 @@ import { ExtensionMetadata } from "resource:///org/gnome/shell/extensions/extens
 import { PlayerInfo } from "./mpris.js";
 import { gettext as _g } from "./gettext.js";
 import { getStandardCover, getBlurredCover, BannedImageFormatError } from "./imgprocessing.js";
+import { WndBus } from "./wndbus.js";
 
 function getScreenSize() : { w : number, h : number} {
     const monitor = Main.layoutManager.primaryMonitor;
@@ -53,6 +54,7 @@ function setPointer(widget : Clutter.Actor) : void {
 interface PopupCtorArgs {
     menu : PopupMenu.PopupMenu;
     metadata : ExtensionMetadata;
+    wndBus : WndBus;
     mediaTogglePause : (name : string) => Promise<void>;
     mediaPrev : (name : string) => Promise<void>;
     mediaNext : (name : string) => Promise<void>;
@@ -64,6 +66,7 @@ export class Popup {
     #mediaPrev : (name : string) => void;
     #mediaNext : (name : string) => void;
 
+    #wndBus : WndBus;
     #metadata : ExtensionMetadata;
     #coverUri : string | null = null;
 
@@ -82,7 +85,12 @@ export class Popup {
 
     #playerName : string | null = null;
 
+    #titleText : string = "";
+    #albumText : string = "";
+    #artistsText : string = "";
+
     constructor(a : PopupCtorArgs) {
+        this.#wndBus = a.wndBus;
         this.#mediaPrev = a.mediaPrev;
         this.#mediaNext = a.mediaNext;
         this.#mediaTogglePause = a.mediaTogglePause;
@@ -100,7 +108,7 @@ export class Popup {
             x_expand: true,
             y_expand: true
         });
-        this.#coverImg = new St.Widget({
+        this.#coverImg = new St.Button({
             style_class: "dropbeat-text dropbeat-cover",
             x_expand: true,
             y_expand: true,
@@ -115,6 +123,14 @@ export class Popup {
         this.#coverImg.connect("notify::allocation", () => {
             const width = this.#coverBin.allocation.get_width();
             this.#coverBin.set_size(width, width);
+        });
+        this.#coverImg.connect("clicked", () => {
+            this.#wndBus.wndFullscreen({
+                title: this.#titleText,
+                album: this.#albumText,
+                artists: this.#artistsText,
+                albumArtChanged: true
+            });
         });
 
         this.#title = new St.Label({
@@ -250,8 +266,9 @@ export class Popup {
     async updateGuiAsync(name : string, p : PlayerInfo) : Promise<void> {
         this.#playerName = name;
 
-        this.#title.text = p.title || _g("No Title");
-        this.#artist.text = p.artists?.join(_g(" / ")) || _g("No Artist");
+        this.#title.text = this.#titleText = p.title || _g("No Title");
+        this.#artist.text = this.#artistsText = p.artists?.join(_g(" / ")) || _g("No Artist");
+        this.#albumText = p.album || "";
 
         let uri : string;
         if(p.artUrl) uri = p.artUrl;
