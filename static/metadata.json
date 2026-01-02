@@ -8,7 +8,7 @@
     "shell-version": [
         "48", "49"
     ],
-    "version-name": "49.0.0",
+    "version-name": "49.1.0-dev",
     "dontations": {
         "kofi": "romanlefler"
     }

@@ -83,7 +83,8 @@ $(BUILD)/extension.js $(BUILD)/resources.js: $(SRCS) ./node_modules/.package-loc
 
 $(SCHEMAOUT): $(SCHEMASRC)
 	@printf -- 'NEEDED: glib-compile-schemas\n'
-	glib-compile-schemas $(SCHEMAS) --dry-run --strict
+	mkdir -p $(SCHEMAOUTDIR)
+	glib-compile-schemas $(SCHEMAS) --targetdir=$(SCHEMAOUTDIR) --strict
 
 $(SCHEMACP): $(SCHEMASRC)
 	mkdir -p $(SCHEMAOUTDIR)
@@ -110,7 +111,7 @@ $(BUILD)/locale/%/LC_MESSAGES/$(UUID).mo: $(PO)/%.po
 $(ZIP): out
 	@printf -- 'NEEDED: zip\n'
 	mkdir -p $(DIST)
-	(cd $(BUILD) && zip ../../$(ZIP) -9r ./)
+	(cd $(BUILD) && zip ../../$(ZIP) -9r ./ -x'./schemas/gschemas.compiled')
 
 # Updates all existing po files by merging them with the pot.
 # If already present, the pot is removed and recreated.
