@@ -121,6 +121,29 @@ export class AboutPage extends Adw.PreferencesPage {
         ));
         bottomGroup.add(bottomBox);
         this.add(bottomGroup);
+
+        const licExtGroup = new Adw.PreferencesGroup();
+        const licExtBox = new Gtk.Box({
+            orientation: Gtk.Orientation.VERTICAL
+        });
+        licExtBox.append(md(_g("Dropbeat is licensed under the %s license.").format(
+            "<a href=\"https://www.gnu.org/licenses/gpl-3.0.en.html\">" +
+            _g("GPLv3 license") + "</a>"
+        )));
+        licExtGroup.add(licExtBox);
+        this.add(licExtGroup);
+        const licVinylGroup = new Adw.PreferencesGroup();
+        const licVinylBox = new Gtk.Box({
+            orientation: Gtk.Orientation.VERTICAL
+        });
+        licVinylBox.append(md(_g("The \"missing cover art\" vinyl icon is from %s.").format(
+            `<a href=\"https://pngimg.com/image/82686\">${_g("pngimg.com")}</a>`
+        )));
+        licVinylBox.append(md(_g("License: %s. No modifications made.").format(
+            `<a href=\"https://pngimg.com/license\">${_g("PNGIMG License")}</a>`
+        )));
+        licVinylGroup.add(licVinylBox);
+        this.add(licVinylGroup);
     }
 
 }
