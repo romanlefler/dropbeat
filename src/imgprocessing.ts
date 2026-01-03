@@ -229,6 +229,9 @@ export async function getBlurredCover(originalPath : string) : Promise<string> {
     // The get paths are used to get absolute paths
     const success = await spawnAsync([
         "magick", originalFile.get_path()!,
+        "-background", "#202020",
+        "-alpha", "remove",
+        "-alpha", "off",
         "-blur", BLUR_RADIUS,
         "-modulate", `${BRIGHTNESS_PERCENT},100,100`,
         "-brightness-contrast", `0x${CONTRAST_ADDEND}`,
