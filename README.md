@@ -10,7 +10,7 @@ ImageMagick (available in all distros' official repos)
 
 ## Installation
 
-[![Get on GNOME Extensions](./docs/ego.png)](https://extensions.gnome.org/extension/8261/simpleweather/)
+[![Get on GNOME Extensions](./docs/ego.png)](https://extensions.gnome.org/extension/9019/dropbeat/)
 
 ## Features
 
