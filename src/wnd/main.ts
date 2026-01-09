@@ -27,6 +27,7 @@
 import Gio from "gi://Gio";
 import Gdk from "gi://Gdk?version=4.0";
 import Gtk from "gi://Gtk?version=4.0";
+import { Design, UiMan } from "./design.js";
 
 const APP_ID = "com.romanlefler.Dropbeat.Wnd";
 
@@ -79,6 +80,10 @@ function main(argv: string[])
         wnd.set_child(box);
 
         attachHandlers(app, wnd);
+
+        const design = new Design("No Title");
+        const uiMan = new UiMan(design, wnd);
+        uiMan.createWidgets();
 
         wnd.present();
         wnd.fullscreen();

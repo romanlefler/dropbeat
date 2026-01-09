@@ -118,6 +118,7 @@ export class Popup {
         this.#coverBin = new St.Bin({
             child: this.#coverImg
         });
+        setPointer(this.#coverImg);
 
         // This forces it to be a square
         this.#coverImg.connect("notify::allocation", () => {
@@ -125,6 +126,7 @@ export class Popup {
             this.#coverBin.set_size(width, width);
         });
         this.#coverImg.connect("clicked", () => {
+            a.menu.close(true);
             this.#wndBus.wndFullscreen({
                 title: this.#titleText,
                 album: this.#albumText,
