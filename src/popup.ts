@@ -55,6 +55,7 @@ interface PopupCtorArgs {
     menu : PopupMenu.PopupMenu;
     metadata : ExtensionMetadata;
     wndBus : WndBus;
+    gSettings : Gio.Settings;
     mediaTogglePause : (name : string) => Promise<void>;
     mediaPrev : (name : string) => Promise<void>;
     mediaNext : (name : string) => Promise<void>;
@@ -84,12 +85,14 @@ export class Popup {
     #nextButton : St.Button;
 
     #playerName : string | null = null;
+    readonly #gSettings : Gio.Settings;
 
     #titleText : string = "";
     #albumText : string = "";
     #artistsText : string = "";
 
     constructor(a : PopupCtorArgs) {
+        this.#gSettings = a.gSettings;
         this.#wndBus = a.wndBus;
         this.#mediaPrev = a.mediaPrev;
         this.#mediaNext = a.mediaNext;
@@ -279,12 +282,14 @@ export class Popup {
         if(this.#coverUri !== uri && uri) {
             let art : string, blurred : string;
             try {
-                art = await getStandardCover(uri);
+                const allowHttp = this.#gSettings.get_boolean("allow-cover-internet");
+                art = await getStandardCover(uri, allowHttp);
                 blurred = await getBlurredCover(art);
             } catch(e) {
                 if(e instanceof Gio.ResolverError || e instanceof BannedImageFormatError) {
                     console.warn(`Failed to process cover art "${uri}": ${e.message}`);
-                    art = await getStandardCover(`file://${this.#metadata.path}/music.png`);
+                    const f = `file://${this.#metadata.path}/music.png`;
+                    art = await getStandardCover(f, false);
                     blurred = await getBlurredCover(art);
                 } else throw e;
             }

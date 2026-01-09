@@ -61,13 +61,30 @@ export class GeneralPage extends Adw.PreferencesPage {
             active: openMenuShortcut.getSuper()
         });
         openMenuSuper.connect("notify::active", (w : Adw.SwitchRow) => {
-            console.error("TOGGLE SUPER", w.active);
             openMenuShortcut.setSuper(w.active);
         });
 
         keybindingsGroup.add(openMenuShortcut);
         keybindingsGroup.add(openMenuSuper);
+
+        const internetGroup = new Adw.PreferencesGroup({
+            title: _g("Internet"),
+            description: _g("Configure Internet permissions")
+        })
+        const useInternet = new Adw.SwitchRow({
+            title: _g("Fetch Album Covers"),
+            subtitle: _g("Allow fetching album covers over HTTP/HTTPS"),
+            active: settings.get_boolean("album-cover-internet")
+        });
+        useInternet.connect("notify::active", (w : Adw.SwitchRow) => {
+            settings.set_boolean("album-cover-internet", w.active);
+            settings.apply();
+        });
+
+        internetGroup.add(useInternet);
+
         this.add(keybindingsGroup);
+        this.add(internetGroup);
     }
 
 }

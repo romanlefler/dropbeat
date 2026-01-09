@@ -189,13 +189,14 @@ function detectImageFormat(file : Gio.File) : Promise<"PNG" | "JPEG" | null> {
     });
 }
 
-export async function getStandardCover(uri : string) : Promise<string> {
+export async function getStandardCover(uri : string, fetchHttp : boolean) : Promise<string> {
     try {
         const dir = await getDir();
         const file = Gio.File.new_for_path(`${dir}/standard`);
         if(uri.startsWith("http://") || uri.startsWith("https://")) {
+            if(!fetchHttp) throw new Error("HTTP/HTTPS fetching not allowed.");
             const { status, data } = await fetchBytes(uri);
-            if(!isOk(status) || !data) throw new Error("Couldn't fetch image.");
+            if(!isOk(status) || !data) throw new Error("Failed to fetch image.");
             await write(file, data);
             return file.get_path()!;
         } else if(uri.startsWith("file://")) {

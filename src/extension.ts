@@ -128,6 +128,7 @@ export default class DropbeatExtension extends Extension {
                 menu: indic.menu,
                 metadata: this.metadata,
                 wndBus: this.#wndBus,
+                gSettings: this.#gsettings,
                 mediaTogglePause,
                 mediaPrev,
                 mediaNext
