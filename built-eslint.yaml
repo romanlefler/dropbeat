@@ -1,0 +1,42 @@
+root: true
+
+parserOptions:
+  sourceType: module
+  ecmaVersion: 2022
+
+rules:
+  curly:
+    - error
+    - all
+
+  nonblock-statement-body-position:
+    - error
+    - beside
+
+  brace-style:
+    - error
+    - 1tbs
+    - allowSingleLine: false
+
+  indent:
+    - error
+    - 4
+    - SwitchCase: 1
+
+  lines-between-class-members:
+    - error
+    - always
+    - exceptAfterSingleLine: true
+
+  padding-line-between-statements:
+    - error
+    - blankLine: always
+      prev: function
+      next: "*"
+    - blankLine: always
+      prev: export
+      next: "*"
+    - blankLine: always
+      prev: class
+      next: "*"
+

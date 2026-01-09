@@ -25,6 +25,8 @@ ZIP		     := $(DIST)/$(NAME)-v$(VERSION).zip
 POT			 := $(PO)/$(UUID).pot
 MOS          := $(POFILES:$(PO)/%.po=$(BUILD)/locale/%/LC_MESSAGES/$(UUID).mo)
 
+ESLINT := $(shell command -v eslint 2>/dev/null)
+
 # Packages should use make DESTDIR=... for packaging
 ifeq ($(strip $(DESTDIR)),)
 	INSTALLTYPE = local
@@ -80,6 +82,12 @@ $(BUILD)/extension.js $(BUILD)/resources.js: $(SRCS) ./node_modules/.package-loc
 		cat $(BUILD)/resources.js >> $$f; \
 		mv $$f $(BUILD)/resources.js; \
 	fi
+	@printf -- 'OPTIONAL: eslint\n'
+ifdef ESLINT
+	JSOUTS=$$(find $(BUILD) -type f -name '*.js'); \
+	echo $$JSOUTS; \
+	$(ESLINT) $$JSOUTS --fix --no-eslintrc -c built-eslint.yaml
+endif
 
 $(SCHEMAOUT): $(SCHEMASRC)
 	@printf -- 'NEEDED: glib-compile-schemas\n'
