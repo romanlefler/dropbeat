@@ -282,7 +282,7 @@ export class Popup {
         if(this.#coverUri !== uri && uri) {
             let art : string, blurred : string;
             try {
-                const allowHttp = this.#gSettings.get_boolean("allow-cover-internet");
+                const allowHttp = this.#gSettings.get_boolean("album-cover-internet");
                 art = await getStandardCover(uri, allowHttp);
                 blurred = await getBlurredCover(art);
             } catch(e) {
