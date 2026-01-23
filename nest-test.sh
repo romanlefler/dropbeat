@@ -6,7 +6,7 @@ rm -rf $HOME/.local/share/gnome-shell/extensions/$UUID
 
 make install
 
-# export G_MESSAGES_DEBUG=all
+export G_MESSAGES_DEBUG=Gjs,GLib,Gtk
 export MUTTER_DEBUG_DUMMY_MODE_SPECS=1280x1024
 export SHELL_DEBUG=all
 
