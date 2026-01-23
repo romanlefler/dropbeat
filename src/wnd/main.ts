@@ -33,6 +33,13 @@ import { Design, UiMan } from "./design.js";
 
 const APP_ID = "com.romanlefler.Dropbeat.Wnd";
 
+export interface UpdateWndArgs {
+    title : string;
+    album : string;
+    artists : string;
+    albumArtChanged : boolean;
+}
+
 function attachHandlers(app: Gtk.Application, wnd: Gtk.ApplicationWindow) {
     wnd.connect("close-request", () =>
     {
@@ -80,6 +87,12 @@ function loadCss(dir : string) {
 }
 
 function main(argv: string[]) {
+    const a : UpdateWndArgs = {
+        title: argv[0] || "No Title",
+        album: argv[1] || "",
+        artists: argv[2] || "No Artist",
+        albumArtChanged: argv[3] === "1"
+    };
     const app = new Gtk.Application({
         application_id: APP_ID,
         flags: Gio.ApplicationFlags.FLAGS_NONE
@@ -97,7 +110,7 @@ function main(argv: string[]) {
 
         attachHandlers(app, wnd);
 
-        const design = new Design("No Title");
+        const design = new Design(a.title, a.artists);
         const uiMan = new UiMan(design, wnd);
         uiMan.createWidgets();
 

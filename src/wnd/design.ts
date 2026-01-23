@@ -25,9 +25,11 @@ const BLURRED = "/tmp/dropbeat/blurred";
 
 export class Design {
     #title : string;
+    #artist : string;
 
-    constructor(title : string) {
+    constructor(title : string, artist : string) {
         this.#title = title;
+        this.#artist = artist;
     }
 
     getTitle() : string {
@@ -36,6 +38,14 @@ export class Design {
 
     setTitle(title : string) : void {
         this.#title = title;
+    }
+
+    getArtist() : string {
+        return this.#artist;
+    }
+    
+    setArtist(artist : string) : void {
+        this.#artist = artist;
     }
 }
 
@@ -95,14 +105,14 @@ export class UiMan {
 
         // labels
         const title = new Gtk.Label({
-            label: "Song Title",
+            label: this.#design.getTitle(),
             halign: Gtk.Align.CENTER,
             css_classes: [ "title-text" ]
         });
         Utils.setMargin(title, "5% n n");
 
         const artist = new Gtk.Label({
-            label: "Artist Name",
+            label: this.#design.getArtist(),
             halign: Gtk.Align.CENTER,
             css_classes: [ "artist-text" ]
         });
