@@ -72,7 +72,7 @@ export class WndBus {
                 }
 
                 if (stderr && stderr.length > 0) {
-                    console.log(`DropbeatWnd stderr: ${stderr.trimEnd()}`);
+                    console.error(`DropbeatWnd stderr: ${stderr.trimEnd()}`);
                 }
             }
             catch (e) {
