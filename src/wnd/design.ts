@@ -18,6 +18,7 @@
 import Gio from "gi://Gio";
 import Gdk from "gi://Gdk?version=4.0";
 import Gtk from "gi://Gtk?version=4.0";
+import * as Utils from "./utils.js";
 
 const COVER = "/tmp/dropbeat/standard";
 const BLURRED = "/tmp/dropbeat/blurred";
@@ -41,6 +42,7 @@ export class Design {
 export class UiMan {
     #overlay? : Gtk.Overlay;
     #bgImg? : Gtk.Picture;
+    #foreground? : Gtk.Box;
 
     #design : Design;
     #wnd : Gtk.ApplicationWindow;
@@ -57,7 +59,60 @@ export class UiMan {
         });
 
         this.#overlay.set_child(this.#bgImg);
+        this.#overlay.add_overlay(this.#createForeground());
         this.#wnd.set_child(this.#overlay);
+    }
+
+    #createForeground() : Gtk.Box {
+        const box = new Gtk.Box({
+            orientation: Gtk.Orientation.VERTICAL,
+            spacing: 10
+        });
+
+        const coverFrame = new Gtk.AspectFrame({
+            ratio: 1.0,
+            obey_child: true,
+            width_request: 280,
+            height_request: 280,
+            halign: Gtk.Align.CENTER,
+            overflow: Gtk.Overflow.HIDDEN,
+            css_classes: [ "cover-frame" ]
+        });
+        Utils.setMargin(coverFrame, "10% 10% 5%");
+        const coverClip = new Gtk.Box({
+            hexpand: true,
+            vexpand: true,
+            overflow: Gtk.Overflow.HIDDEN,
+            css_classes: [ "cover-clip" ]
+        });
+        coverFrame.set_child(coverClip);
+
+        const cover = new Gtk.Picture({
+            content_fit: Gtk.ContentFit.COVER,
+            file: Gio.File.new_for_path(COVER)
+        });
+        coverClip.append(cover);
+
+        // labels
+        const title = new Gtk.Label({
+            label: "Song Title",
+            halign: Gtk.Align.CENTER,
+            css_classes: [ "title-text" ]
+        });
+        Utils.setMargin(title, "5% n n");
+
+        const artist = new Gtk.Label({
+            label: "Artist Name",
+            halign: Gtk.Align.CENTER,
+            css_classes: [ "artist-text" ]
+        });
+        Utils.setMargin(artist, "n n 10%");
+
+        box.append(coverFrame);
+        box.append(title);
+        box.append(artist);
+
+        return box;
     }
 
     update() : void {

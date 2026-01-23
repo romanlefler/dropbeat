@@ -24,9 +24,11 @@
  * from the build directory.
  */
 
-import Gio from "gi://Gio";
 import Gdk from "gi://Gdk?version=4.0";
+import Gio from "gi://Gio";
+import GLib from "gi://GLib";
 import Gtk from "gi://Gtk?version=4.0";
+import System from "system";
 import { Design, UiMan } from "./design.js";
 
 const APP_ID = "com.romanlefler.Dropbeat.Wnd";
@@ -55,29 +57,43 @@ function attachHandlers(app: Gtk.Application, wnd: Gtk.ApplicationWindow) {
     wnd.add_controller(keys);
 }
 
-function main(argv: string[])
-{
-    const app = new Gtk.Application(
-    {
+function loadCss(dir : string) {
+    const provider = new Gtk.CssProvider();
+    const path = GLib.build_filenamev([ dir, "..", "wnd.css" ]);
+    console.error(path);
+
+    try {
+        provider.load_from_path(path);
+
+        const disp = Gdk.Display.get_default();
+        if(disp) {
+            Gtk.StyleContext.add_provider_for_display(
+                disp,
+                provider,
+                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+            );
+        }
+    } catch(e) {
+        console.error(e);
+        throw e;
+    }
+}
+
+function main(argv: string[]) {
+    const app = new Gtk.Application({
         application_id: APP_ID,
         flags: Gio.ApplicationFlags.FLAGS_NONE
     });
 
-    app.connect("activate", () =>
-    {
+    app.connect("activate", () => {
+        const dir = GLib.path_get_dirname(System.programInvocationName);
+        loadCss(dir);
+
         const wnd = new Gtk.ApplicationWindow(
         {
             application: app,
             title: "Dropbeat",
         });
-
-        const box = new Gtk.Box(
-        {
-            orientation: Gtk.Orientation.VERTICAL,
-        });
-        box.append(new Gtk.Label({ label: argv.join(" | ") }));
-
-        wnd.set_child(box);
 
         attachHandlers(app, wnd);
 
@@ -93,3 +109,4 @@ function main(argv: string[])
 }
 
 main(ARGV);
+

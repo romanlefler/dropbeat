@@ -1,0 +1,20 @@
+
+.cover-clip
+{
+    border-radius: 50px;
+}
+
+.title-text
+{
+    font-weight: bolder;
+    font-size: 50px;
+    color: white;
+}
+
+.artist-text
+{
+    font-weight: bold;
+    font-size: 35px;
+    color: white;
+}
+
