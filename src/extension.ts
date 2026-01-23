@@ -28,6 +28,7 @@ import { Popup } from "./popup.js";
 import { setUpSoup, freeSoup } from "./soup.js";
 import { keybindingSetup, keybindingCleanup } from "./keybinding.js";
 import { WndBus } from "./wndbus.js";
+import { ensureMagick } from "./prereqs.js";
 
 export default class DropbeatExtension extends Extension {
 
@@ -61,6 +62,13 @@ export default class DropbeatExtension extends Extension {
     }
 
     async #enableAsync() : Promise<void> {
+        const hasMagick = await ensureMagick(this.#gsettings);
+        if(!hasMagick) {
+            console.error("Dropbeat: ImageMagick not found; disabling.");
+            this.disable();
+            return;
+        }
+
         await mediaLaunched(name => {
             this.#mediaChanged(name);
         }, name => {

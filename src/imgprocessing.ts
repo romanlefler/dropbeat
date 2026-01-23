@@ -113,17 +113,23 @@ async function readStreamAsync(stream : Gio.DataInputStream) : Promise<string | 
  * Returns if succeeded by default,
  * otherwise if returnStdout is true, returns the stdout output.
  */
-async function spawnAsync(argv : string[], returnStdout = false) : Promise<boolean | string> {
-    const [success, pid, stdin, stdout, stderr] = GLib.spawn_async_with_pipes(
-        null,
-        argv,
-        null,
-        GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-        null
-    );
-    if(!pid) throw new Error(`Couldn't spawn command '${argv.join(" ")}'.`);
+export async function spawnAsync(argv : string[], returnStdout = false) : Promise<boolean | string> {
+    let success : boolean, pid : GLib.Pid | null, stdin : number, stdout : number, stderr : number;
+    try {
+        [ success, pid, stdin, stdout, stderr ] = GLib.spawn_async_with_pipes(
+            null,
+            argv,
+            null,
+            GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+            null
+        );
+        if(!pid) throw new Error("Process not spawned.");
+    } catch(e) {
+        if(returnStdout) throw new Error(`Couldn't spawn command '${argv.join(" ")}'.`);
+        else return false;
+    }
     return new Promise<boolean | string>((resolve, reject) => {
-        GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, async (_pid, status) => {
+        GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid!, async (_pid, status) => {
             try {
                 const exitCode = status >> 8;
                 if(!exitCode) {
@@ -143,7 +149,7 @@ async function spawnAsync(argv : string[], returnStdout = false) : Promise<boole
             } catch(e) {
                 reject(e);
             } finally {
-                GLib.spawn_close_pid(pid);
+                GLib.spawn_close_pid(pid!);
             }
         });
     });

@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist>
     <schema id="org.gnome.shell.extensions.dropbeat" path="/org/gnome/shell/extensions/dropbeat/">
+        <key name="has-magick" type="b">
+            <default>false</default>
+            <summary>True if ImageMagick is confirmed to be installed</summary>
+        </key>
         <key name="open-menu-keybinding" type="as">
             <default>[]</default>
             <summary>Keyboard shortcut to open menu</summary>
