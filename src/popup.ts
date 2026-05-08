@@ -41,12 +41,18 @@ function vSpacer(px : number) {
 
 // Widget must have reactive and track_hover true
 function setPointer(widget : Clutter.Actor) : void {
-    if(Meta.Cursor.POINTER && Meta.Cursor.DEFAULT) {
+    //@ts-ignore
+    if(widget.set_cursor_type) {
+        // GNOME 50
+        //@ts-ignore
+        widget.set_cursor_type(Clutter.CursorType.POINTER);
+    } else if(global?.display?.set_cursor) {
+        // Pre-GNOME 50
         widget.connect("enter-event", () => {
-            global.display.set_cursor(Meta.Cursor.POINTER);
+            global.display.set_cursor(Meta.Cursor?.POINTER ?? 5);
         });
         widget.connect("leave-event", () => {
-            global.display.set_cursor(Meta.Cursor.DEFAULT);
+            global.display.set_cursor(Meta.Cursor?.DEFAULT ?? 2);
         });
     }
 }
