@@ -15,6 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * This script is imported into wnd/main and is not imported into the shell or prefs processes.
+ */
+
 import GLib from "gi://GLib";
 import Gdk from "gi://Gdk";
 import Gtk from "gi://Gtk";
