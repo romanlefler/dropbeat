@@ -119,7 +119,8 @@ $(BUILD)/locale/%/LC_MESSAGES/$(UUID).mo: $(PO)/%.po
 $(ZIP): out
 	@printf -- 'NEEDED: zip\n'
 	mkdir -p $(DIST)
-	(cd $(BUILD) && zip ../../$(ZIP) -9r ./ -x'./schemas/gschemas.compiled')
+	# NOTE: Remove resources.js if it ends up being used
+	(cd $(BUILD) && zip ../../$(ZIP) -9r ./ -x './schemas/gschemas.compiled' './mockMpris.js' './resources.js')
 
 # Updates all existing po files by merging them with the pot.
 # If already present, the pot is removed and recreated.
