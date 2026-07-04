@@ -16,8 +16,8 @@
 */
 
 import GLib from "gi://GLib";
-import Gdk from "gi://Gdk?version=4.0";
-import Gtk from "gi://Gtk?version=4.0";
+import Gdk from "gi://Gdk";
+import Gtk from "gi://Gtk";
 
 export function on1stAllocation(w : Gtk.Widget, fn : (this : Gtk.Widget, aw: number, ah : number) => void) : void {
     w.connect("map", () => {

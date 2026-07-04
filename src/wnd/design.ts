@@ -16,8 +16,8 @@
 */
 
 import Gio from "gi://Gio";
-import Gdk from "gi://Gdk?version=4.0";
-import Gtk from "gi://Gtk?version=4.0";
+import Gdk from "gi://Gdk";
+import Gtk from "gi://Gtk";
 import * as Utils from "./utils.js";
 
 const COVER = "/tmp/dropbeat/standard";

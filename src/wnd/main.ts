@@ -24,10 +24,10 @@
  * from the build directory.
  */
 
-import Gdk from "gi://Gdk?version=4.0";
+import Gdk from "gi://Gdk";
 import Gio from "gi://Gio";
 import GLib from "gi://GLib";
-import Gtk from "gi://Gtk?version=4.0";
+import Gtk from "gi://Gtk";
 import System from "system";
 import { Design, UiMan } from "./design.js";
 
