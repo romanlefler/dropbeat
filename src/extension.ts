@@ -111,6 +111,13 @@ export default class DropbeatExtension extends Extension {
         keybindingCleanup();
 
         this.#destroyIndicator();
+        // This is all redundant but done for Shexli/review process {
+        this.#popup?.free();
+        this.#popup = undefined;
+        this.#panelIcon = undefined;
+        this.#indicator?.destroy();
+        this.#indicator = undefined;
+        // }
 
         this.#gsettings = undefined!;
     }
