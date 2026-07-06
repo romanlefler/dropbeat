@@ -79,6 +79,8 @@ export class WndBus {
     }
 
     wndFullscreen(args : UpdateWndArgs) : void {
+        if(this.#proc) this.free();
+
         const argv : string[] = [
             "gjs",
             "-m",
