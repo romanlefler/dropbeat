@@ -58,6 +58,10 @@ export class UiMan {
     #bgImg? : Gtk.Picture;
     #foreground? : Gtk.Box;
 
+    #titleLbl? : Gtk.Label;
+    #artistLbl? : Gtk.Label;
+    #cover? : Gtk.Picture;
+
     #design : Design;
     #wnd : Gtk.ApplicationWindow;
     constructor(design : Design, wnd : Gtk.ApplicationWindow) {
@@ -126,11 +130,20 @@ export class UiMan {
         box.append(title);
         box.append(artist);
 
+        this.#titleLbl = title;
+        this.#artistLbl = artist;
+        this.#cover = cover;
+
         return box;
     }
 
     update() : void {
         if(!this.#overlay) throw new Error("Dropbeat Wnd: UiMan not initialized.");
+
+        this.#titleLbl?.set_label(this.#design.getTitle());
+        this.#artistLbl?.set_label(this.#design.getArtist());
+        this.#cover?.set_file(Gio.File.new_for_path(COVER));
+        this.#bgImg?.set_file(Gio.File.new_for_path(BLURRED));
     }
 }
 

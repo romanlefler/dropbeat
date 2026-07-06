@@ -30,6 +30,7 @@ import GLib from "gi://GLib";
 import Gtk from "gi://Gtk";
 import System from "system";
 import { Design, UiMan } from "./design.js";
+import { beginReadCmdline } from "./update.js";
 
 const APP_ID = "com.romanlefler.Dropbeat.Wnd";
 
@@ -113,6 +114,8 @@ function main(argv: string[]) {
         const design = new Design(a.title, a.artists);
         const uiMan = new UiMan(design, wnd);
         uiMan.createWidgets();
+
+        beginReadCmdline(design, uiMan);
 
         wnd.present();
         wnd.fullscreen();

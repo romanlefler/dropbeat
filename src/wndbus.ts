@@ -16,6 +16,7 @@
 */
 
 import Gio from "gi://Gio";
+import GLib from "gi://GLib";
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
 import { gettext as _g } from "./gettext.js";
 
@@ -32,6 +33,35 @@ export class WndBus {
     #wndMainPath : string;
 
     #proc : Gio.Subprocess | null = null;
+    #stdin : Gio.OutputStream | null = null;
+
+    #logOutput(s : Gio.InputStream, isError : boolean) : void {
+        s.read_bytes_async(4096, GLib.PRIORITY_DEFAULT, null, (_, res) => {
+            try {
+                const bytes = s.read_bytes_finish(res);
+                const txt = new TextDecoder().decode(bytes.toArray());
+                if(txt) {
+                    if(isError) {
+                        const msg = `DropbeatWnd stderr: ${txt.trimEnd()}`;
+                        switch(txt.substring(0, txt.indexOf(':')).trim()) {
+                            case "Gjs-Console-Message": case "Gjs-Message":
+                                console.log(msg);
+                                break;
+                            case "Gjs-Critical":
+                                console.error(msg);
+                            default:
+                                console.warn(msg);
+                        }
+                    }
+                    else console.log(`DropbeatWnd stdout: ${txt.trimEnd()}`)
+                }
+                this.#logOutput(s, isError);
+            } catch(e) {
+                console.error(e);
+            }
+            return GLib.SOURCE_REMOVE;
+        });
+    }
 
     constructor(ext : Extension) {
         this.#extDir = ext.dir;
@@ -45,6 +75,7 @@ export class WndBus {
     free() : void {
         this.#proc?.force_exit();
         this.#proc = null;
+        this.#stdin = null;
     }
 
     wndFullscreen(args : UpdateWndArgs) : void {
@@ -59,28 +90,60 @@ export class WndBus {
         ];
         const proc = new Gio.Subprocess({
             argv,
-            flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+            flags: Gio.SubprocessFlags.STDIN_PIPE | Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
         });
         proc.init(null);
 
-        proc.communicate_utf8_async(null, null, (_p, res) => {
+        this.#proc = proc;
+        this.#stdin = proc.get_stdin_pipe();
+
+        try {
+            const stdout = proc.get_stdout_pipe();
+            const stderr = proc.get_stderr_pipe();
+            if(stdout) this.#logOutput(stdout, false);
+            if(stderr) this.#logOutput(stderr, true);
+        } catch(e) {
+            console.error(e);
+        }
+
+        proc.wait_async(null, (_, res) => {
             try {
-                const [, stdout, stderr] = proc.communicate_utf8_finish(res);
-
-                if (stdout && stdout.length > 0) {
-                    console.log(`DropbeatWnd stdout: ${stdout.trimEnd()}`);
-                }
-
-                if (stderr && stderr.length > 0) {
-                    console.error(`DropbeatWnd stderr: ${stderr.trimEnd()}`);
-                }
-            }
-            catch (e) {
+                proc.wait_finish(res);
+            } catch (e) {
                 console.error(e);
+            } finally {
+                this.#proc = null;
+                this.#stdin = null;
             }
         });
+    }
 
-        this.#proc = proc;
+    updateWnd(a: UpdateWndArgs): void {
+        if(!this.#stdin) return;
+
+        const msg = JSON.stringify({
+            title: a.title || _g("No Title"),
+            album: a.album || "",
+            artists: a.artists || _g("No Artist"),
+            albumArtChanged: a.albumArtChanged,
+        }) + "\n";
+
+        try {
+            this.#stdin.write_bytes_async(
+                new GLib.Bytes(new TextEncoder().encode(msg)),
+                GLib.PRIORITY_DEFAULT,
+                null,
+                (_, res) => {
+                    try {
+                        this.#stdin?.write_bytes_finish(res);
+                    } catch (e) {
+                        console.error(`DropbeatWnd stdin write failed: ${e}`);
+                    }
+                }
+            );
+        } catch(e) {
+            console.error(e);
+        }
     }
 
 }

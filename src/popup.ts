@@ -309,6 +309,13 @@ export class Popup {
         } else {
             this.#pauseIcon.icon_name = "media-playback-pause-symbolic";
         }
+
+        this.#wndBus?.updateWnd({
+            title: this.#titleText,
+            album: this.#albumText,
+            artists: this.#artistsText,
+            albumArtChanged: true
+        });
     }
 
 }
