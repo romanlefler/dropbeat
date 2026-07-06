@@ -39,6 +39,7 @@ export class WndBus {
         s.read_bytes_async(4096, GLib.PRIORITY_DEFAULT, null, (_, res) => {
             try {
                 const bytes = s.read_bytes_finish(res);
+                if(!bytes.get_size()) return;
                 const txt = new TextDecoder().decode(bytes.toArray());
                 if(txt) {
                     if(isError) {
@@ -59,7 +60,6 @@ export class WndBus {
             } catch(e) {
                 console.error(e);
             }
-            return GLib.SOURCE_REMOVE;
         });
     }
 
