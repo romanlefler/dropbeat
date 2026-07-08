@@ -46,6 +46,10 @@ export class WndBus {
                         const msg = `DropbeatWnd stderr: ${txt.trimEnd()}`;
                         switch(txt.substring(0, txt.indexOf(':')).trim()) {
                             case "Gjs-Console-Message": case "Gjs-Message":
+
+                                // EGO doesn't want you doing ?version= anyway
+                                if(msg.includes("but it has 3 versions available")) break;
+
                                 console.log(msg);
                                 break;
                             case "Gjs-Critical":
