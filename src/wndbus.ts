@@ -48,7 +48,7 @@ export class WndBus {
                             case "Gjs-Console-Message": case "Gjs-Message":
 
                                 // EGO doesn't want you doing ?version= anyway
-                                if(msg.includes("but it has 3 versions available")) break;
+                                if(msg.includes("but it has") && msg.includes("versions available")) break;
 
                                 console.log(msg);
                                 break;
