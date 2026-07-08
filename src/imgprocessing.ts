@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+import GdkPixbuf from "gi://GdkPixbuf";
 import GLib from "gi://GLib";
 import Gio from "gi://Gio";
 import { fetchBytes, isOk } from "./soup.js";
@@ -195,19 +196,57 @@ function detectImageFormat(file : Gio.File) : Promise<"PNG" | "JPEG" | null> {
     });
 }
 
+async function errorIfNotPngOrJpeg(file : Gio.File) : Promise<void> {
+    // We only accept PNG and JPEG formats for ImageMagick
+    // This is just a precaution to limit the amount of things we're letting ImageMagick do
+    const imgFmt = await detectImageFormat(file);
+    if(imgFmt !== "PNG" && imgFmt !== "JPEG") throw new BannedImageFormatError();
+}
+
+async function prepareStdCover(inFile : Gio.File, outFile : Gio.File) : Promise<string> {
+    const imgFmt = await detectImageFormat(inFile);
+    if(imgFmt === "PNG" || imgFmt === "JPEG") {
+
+        const pixbuf = GdkPixbuf.Pixbuf.new_from_file(inFile.get_path()!);
+        // Only call ImageMagick if its not a square
+        if(pixbuf.get_width() !== pixbuf.get_height()) {
+
+            const success = await spawnAsync([
+                "magick", inFile.get_path()!,
+                // These commands crop an image to a centered square
+                "-gravity", "center",
+                "-crop", "%[fx:min(w,h)]x%[fx:min(w,h)]+0+0",
+                "+repage",
+                // Removes extra metadata
+                "-strip",
+                outFile.get_path()!
+            ]) as boolean;
+
+            if(success && outFile.query_exists(null)) return outFile.get_path()!;
+            // else just do a copy
+        }
+        // else just do a copy
+    }
+
+    await cp(inFile, outFile);
+    return outFile.get_path()!;
+}
+
 export async function getStandardCover(uri : string, fetchHttp : boolean) : Promise<string> {
     try {
         const dir = await getDir();
         const file = Gio.File.new_for_path(`${dir}/standard`);
         if(uri.startsWith("http://") || uri.startsWith("https://")) {
+
             if(!fetchHttp) throw new Error("HTTP/HTTPS fetching not allowed.");
+            const tmpFile = Gio.File.new_for_path(`${dir}/tempart`);
             const { status, data } = await fetchBytes(uri);
             if(!isOk(status) || !data) throw new Error("Failed to fetch image.");
-            await write(file, data);
-            return file.get_path()!;
+            await write(tmpFile, data);
+            return prepareStdCover(tmpFile, file);
+
         } else if(uri.startsWith("file://")) {
-            await cp(Gio.File.new_for_uri(uri), file);
-            return file.get_path()!;
+            return prepareStdCover(Gio.File.new_for_uri(uri), file);
         } else {
             throw new Error(`Unknown URI protocol '${uri}'`);
         }
@@ -227,27 +266,27 @@ export async function getBlurredCover(originalPath : string) : Promise<string> {
     const dir = await getDir();
     const file = Gio.File.new_for_path(`${dir}/blurred`);
     const originalFile = Gio.File.new_for_path(originalPath);
-    // We only accept PNG and JPEG formats
-    // This is just a precaution to limit the amount of things we're letting ImageMagick do
-    const imgFmt = await detectImageFormat(originalFile);
-    if(imgFmt !== "PNG" && imgFmt !== "JPEG") {
-        throw new BannedImageFormatError();
-    }
+
+    await errorIfNotPngOrJpeg(originalFile);
+
     // The get paths are used to get absolute paths
     const success = await spawnAsync([
         "magick", originalFile.get_path()!,
+        // These options put dark gray behind a transparent image
         "-background", "#202020",
         "-alpha", "remove",
         "-alpha", "off",
+        // These options blur and darken
         "-blur", BLUR_RADIUS,
         "-modulate", `${BRIGHTNESS_PERCENT},100,100`,
         "-brightness-contrast", `0x${CONTRAST_ADDEND}`,
+        // Removes extra metadata
         "-strip",
         file.get_path()!
     ]) as boolean;
 
     if(success && file.query_exists(null)) return file.get_path()!;
-    throw new Error(`Failed to create blurred cover.`);
+    else throw new Error(`Failed to create blurred cover.`);
 }
 
 export function clearTempFiles() : void {
