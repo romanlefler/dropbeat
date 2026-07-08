@@ -17,12 +17,10 @@
 
 import Clutter from "gi://Clutter";
 import Gio from "gi://Gio";
-import GLib from "gi://GLib";
 import GObject from "gi://GObject";
 import St from 'gi://St';
 import { gettext as _g } from "./gettext.js"
 import { ModalDialog } from "resource:///org/gnome/shell/ui/modalDialog.js";
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { spawnAsync } from "./imgprocessing.js";
 
 function paragraph(text : string, ...formatArgs : string[]) : St.Label {
@@ -78,12 +76,14 @@ class MagickDialog extends ModalDialog {
             "  \u2022  %s\n" +
             "  \u2022  %s\n" +
             "  \u2022  %s\n" +
+            "  \u2022  %s\n" +
             "\n"
         ),
             "ImageMagick",
-            "Debian: sudo apt install imagemagick",
+            "Debian/Ubuntu/Mint: sudo apt install imagemagick",
             "Fedora: sudo dnf install imagemagick",
-            "Arch: sudo pacman -S imagemagick"
+            "Arch/Manjaro: sudo pacman -S imagemagick",
+            "OpenSUSE: sudo zypper install ImageMagick"
         );
         box.add_child(weatherProv);
 
