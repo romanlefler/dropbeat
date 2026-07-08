@@ -67,6 +67,11 @@ interface PopupCtorArgs {
     mediaNext : (name : string) => Promise<void>;
 };
 
+interface UpdateGuiArgs {
+    name : string;
+    p : PlayerInfo;
+}
+
 export class Popup {
 
     #mediaTogglePause : (name : string) => void;
@@ -96,6 +101,9 @@ export class Popup {
     #titleText : string = "";
     #albumText : string = "";
     #artistsText : string = "";
+
+    #currentlyUpdating : boolean = false;
+    #queuedUpdate : UpdateGuiArgs | null = null;
 
     constructor(a : PopupCtorArgs) {
         this.#gSettings = a.gSettings;
@@ -271,7 +279,29 @@ export class Popup {
     }
 
     updateGui(name : string, p : PlayerInfo) : void {
-        this.updateGuiAsync(name, p).catch(e => console.error(e));
+        if(this.#currentlyUpdating) {
+            this.#queuedUpdate = { name, p};
+            return;
+        }
+
+        this.#currentlyUpdating = true;
+        this.#updateGuiInternal({ name, p });
+    }
+    
+    #updateGuiInternal(a : UpdateGuiArgs) : void {
+        this.updateGuiAsync(a.name, a.p).then(() => {
+            if(this.#queuedUpdate) {
+                const upd = this.#queuedUpdate!;
+                this.#queuedUpdate = null;
+                this.#updateGuiInternal(upd);
+            }
+            else {
+                this.#currentlyUpdating = false;
+            }
+        }, e => {
+            console.error(e);
+            this.#currentlyUpdating = false;
+        });
     }
 
     async updateGuiAsync(name : string, p : PlayerInfo) : Promise<void> {
@@ -293,7 +323,7 @@ export class Popup {
                 blurred = await getBlurredCover(art);
             } catch(e) {
                 if(e instanceof Gio.ResolverError || e instanceof BannedImageFormatError) {
-                    console.warn(`Failed to process cover art "${uri}": ${e.message}`);
+                    console.warn(`Failed to process cover art "${uri}": ${e.message}\n${e.stack}\nEnd of error backtrace.\n`);
                     const f = `file://${this.#metadata.path}/music.png`;
                     art = await getStandardCover(f, false);
                     blurred = await getBlurredCover(art);

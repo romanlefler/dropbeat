@@ -63,6 +63,27 @@ async function cp(source : Gio.File, dest : Gio.File) : Promise<void> {
     });
 }
 
+async function mv(source : Gio.File, dest : Gio.File) : Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        source.move_async(
+            dest,
+            Gio.FileCopyFlags.OVERWRITE,
+            GLib.PRIORITY_DEFAULT,
+            null,
+            null,
+            (_source, result) => {
+                try {
+                    const ok = source.copy_finish(result);
+                    if(ok) resolve();
+                    else reject(`Couldn't move ${source.get_path()} to ${dest.get_path()}.`);
+                } catch (e) {
+                    reject(e);
+                }
+            }
+        );
+    });
+}
+
 async function write(file : Gio.File, data : Uint8Array) : Promise<void> {
     return new Promise<void>((resolve, reject) => {
         file.replace_async(
@@ -203,7 +224,10 @@ async function errorIfNotPngOrJpeg(file : Gio.File) : Promise<void> {
     if(imgFmt !== "PNG" && imgFmt !== "JPEG") throw new BannedImageFormatError();
 }
 
-async function prepareStdCover(inFile : Gio.File, outFile : Gio.File) : Promise<string> {
+async function prepareStdCover(inFile : Gio.File) : Promise<Gio.File> {
+    const dir = await getDir();
+    const outFile = Gio.File.new_for_path(`${dir}/tmpstandard`);
+
     const imgFmt = await detectImageFormat(inFile);
     if(imgFmt === "PNG" || imgFmt === "JPEG") {
 
@@ -222,14 +246,14 @@ async function prepareStdCover(inFile : Gio.File, outFile : Gio.File) : Promise<
                 outFile.get_path()!
             ]) as boolean;
 
-            if(success && outFile.query_exists(null)) return outFile.get_path()!;
+            if(success && outFile.query_exists(null)) return outFile;
             // else just do a copy
         }
         // else just do a copy
     }
 
     await cp(inFile, outFile);
-    return outFile.get_path()!;
+    return outFile;
 }
 
 export async function getStandardCover(uri : string, fetchHttp : boolean) : Promise<string> {
@@ -239,14 +263,19 @@ export async function getStandardCover(uri : string, fetchHttp : boolean) : Prom
         if(uri.startsWith("http://") || uri.startsWith("https://")) {
 
             if(!fetchHttp) throw new Error("HTTP/HTTPS fetching not allowed.");
-            const tmpFile = Gio.File.new_for_path(`${dir}/tempart`);
+            const tmpFile = Gio.File.new_for_path(`${dir}/tempdownload`);
             const { status, data } = await fetchBytes(uri);
             if(!isOk(status) || !data) throw new Error("Failed to fetch image.");
+
             await write(tmpFile, data);
-            return prepareStdCover(tmpFile, file);
+            const mvFrom = await prepareStdCover(tmpFile);
+            await mv(mvFrom, file);
+            return file.get_path()!;
 
         } else if(uri.startsWith("file://")) {
-            return prepareStdCover(Gio.File.new_for_uri(uri), file);
+            const mvFrom = await prepareStdCover(Gio.File.new_for_uri(uri));
+            await mv(mvFrom, file);
+            return file.get_path()!;
         } else {
             throw new Error(`Unknown URI protocol '${uri}'`);
         }
@@ -264,6 +293,7 @@ export async function getStandardCover(uri : string, fetchHttp : boolean) : Prom
  */
 export async function getBlurredCover(originalPath : string) : Promise<string> {
     const dir = await getDir();
+    const tmpFile = Gio.File.new_for_path(`${dir}/tmpblurred`);
     const file = Gio.File.new_for_path(`${dir}/blurred`);
     const originalFile = Gio.File.new_for_path(originalPath);
 
@@ -282,10 +312,13 @@ export async function getBlurredCover(originalPath : string) : Promise<string> {
         "-brightness-contrast", `0x${CONTRAST_ADDEND}`,
         // Removes extra metadata
         "-strip",
-        file.get_path()!
+        tmpFile.get_path()!
     ]) as boolean;
 
-    if(success && file.query_exists(null)) return file.get_path()!;
+    if(success && file.query_exists(null)) {
+        await mv(tmpFile, file);
+        return file.get_path()!;
+    }
     else throw new Error(`Failed to create blurred cover.`);
 }
 
