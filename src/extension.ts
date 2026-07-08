@@ -61,6 +61,11 @@ export default class DropbeatExtension extends Extension {
         });
     }
 
+    async #pickArbitraryPlayer() : Promise<string | null> {
+        const players = await getMediaPlayers();
+        return players.length > 0 ? players[0] : null;
+    }
+
     async #enableAsync() : Promise<void> {
         const hasMagick = await ensureMagick(this.#gsettings);
         if(!hasMagick) {
@@ -72,17 +77,15 @@ export default class DropbeatExtension extends Extension {
         await mediaLaunched(name => {
             this.#mediaChanged(name);
         }, name => {
-            this.#destroyIndicator();
-            this.#mediaChanged(name);
+            this.#pickArbitraryPlayer().then(pl => {
+                this.#mediaChanged(pl ?? name);
+            });
         }, name => {
             this.#mediaChanged(name);
         });
 
-        const players = await getMediaPlayers();
-        if(players.length > 0) {
-            this.#createIndicator();
-            this.#mediaChanged(players[0]);
-        }
+        const player = await this.#pickArbitraryPlayer();
+        if(player) this.#mediaChanged(player);
 
         this.#settingsHandler = this.#gsettings.connect("changed", (_, k) => {
             if(k === "open-menu-keybinding") {
