@@ -84,6 +84,10 @@ async function mv(source : Gio.File, dest : Gio.File) : Promise<void> {
     });
 }
 
+async function mvString(source : string, dest : string) : Promise<void> {
+    return await mv(Gio.File.new_for_path(source), Gio.File.new_for_path(dest));
+}
+
 async function write(file : Gio.File, data : Uint8Array) : Promise<void> {
     return new Promise<void>((resolve, reject) => {
         file.replace_async(
@@ -270,12 +274,11 @@ export async function getStandardCover(uri : string, fetchHttp : boolean) : Prom
             await write(tmpFile, data);
             const mvFrom = await prepareStdCover(tmpFile);
             await mv(mvFrom, file);
-            return file.get_path()!;
+            return mvFrom.get_path()!;
 
         } else if(uri.startsWith("file://")) {
             const mvFrom = await prepareStdCover(Gio.File.new_for_uri(uri));
-            await mv(mvFrom, file);
-            return file.get_path()!;
+            return mvFrom.get_path()!;
         } else {
             throw new Error(`Unknown URI protocol '${uri}'`);
         }
@@ -294,7 +297,6 @@ export async function getStandardCover(uri : string, fetchHttp : boolean) : Prom
 export async function getBlurredCover(originalPath : string) : Promise<string> {
     const dir = await getDir();
     const tmpFile = Gio.File.new_for_path(`${dir}/tmpblurred`);
-    const file = Gio.File.new_for_path(`${dir}/blurred`);
     const originalFile = Gio.File.new_for_path(originalPath);
 
     await errorIfNotPngOrJpeg(originalFile);
@@ -315,9 +317,8 @@ export async function getBlurredCover(originalPath : string) : Promise<string> {
         tmpFile.get_path()!
     ]) as boolean;
 
-    if(success && file.query_exists(null)) {
-        await mv(tmpFile, file);
-        return file.get_path()!;
+    if(success && tmpFile.query_exists(null)) {
+        return tmpFile.get_path()!;
     }
     else throw new Error(`Failed to create blurred cover.`);
 }
@@ -325,5 +326,18 @@ export async function getBlurredCover(originalPath : string) : Promise<string> {
 export function clearTempFiles() : void {
     const file = Gio.File.new_for_path("/tmp/dropbeat");
     file.delete(null);
+}
+
+/**
+ * Moves temp image files to the standard locations.
+ */
+export async function mvToLocation(std : string, blurred : string) : Promise<[ string, string ]> {
+    const dir = await getDir();
+    const COVER = `${dir}/standard`;
+    const BLURRED = `${dir}/blurred`;
+
+    await mvString(std, COVER);
+    await mvString(blurred, BLURRED);
+    return [ COVER, BLURRED ];
 }
 

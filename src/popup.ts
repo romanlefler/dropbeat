@@ -24,7 +24,7 @@ import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { ExtensionMetadata } from "resource:///org/gnome/shell/extensions/extension.js";
 import { PlayerInfo } from "./mpris.js";
 import { gettext as _g } from "./gettext.js";
-import { getStandardCover, getBlurredCover, BannedImageFormatError } from "./imgprocessing.js";
+import { getStandardCover, getBlurredCover, mvToLocation, BannedImageFormatError } from "./imgprocessing.js";
 import { WndBus } from "./wndbus.js";
 
 function getScreenSize() : { w : number, h : number} {
@@ -351,8 +351,12 @@ export class Popup {
                     blurred = await getBlurredCover(art);
                 } else throw e;
             }
-            this.#coverImg.style = `background-image: url('${art}');`;
-            this.#menuBox.style = `background-image: url('${blurred}');`;
+            
+            // This line updates the actual files so that they're both done at once
+            const [imgArt, imgBlurred ] = await mvToLocation(art, blurred);
+
+            this.#coverImg.style = `background-image: url('${imgArt}');`;
+            this.#menuBox.style = `background-image: url('${imgBlurred}');`;
         }
         this.#coverUri = uri;
     }
