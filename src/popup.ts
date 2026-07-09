@@ -279,21 +279,27 @@ export class Popup {
     }
 
     updateGui(name : string, p : PlayerInfo) : void {
+        this.#playerName = name;
+        this.#updateLabels(p);
+        this.#updateWnd(false);
+
         if(this.#currentlyUpdating) {
-            this.#queuedUpdate = { name, p};
+            this.#queuedUpdate = { name, p };
             return;
         }
 
         this.#currentlyUpdating = true;
-        this.#updateGuiInternal({ name, p });
+        this.#updateArtInternal({ name, p });
     }
     
-    #updateGuiInternal(a : UpdateGuiArgs) : void {
-        this.updateGuiAsync(a.name, a.p).then(() => {
+    #updateArtInternal(a : UpdateGuiArgs) : void {
+        this.#updateArtAsync(a.p).then(() => {
+            this.#updateWnd(true);
+
             if(this.#queuedUpdate) {
                 const upd = this.#queuedUpdate!;
                 this.#queuedUpdate = null;
-                this.#updateGuiInternal(upd);
+                this.#updateArtInternal(upd);
             }
             else {
                 this.#currentlyUpdating = false;
@@ -304,12 +310,28 @@ export class Popup {
         });
     }
 
-    async updateGuiAsync(name : string, p : PlayerInfo) : Promise<void> {
-        this.#playerName = name;
+    #updateWnd(artChanged : boolean) : void {
+        this.#wndBus?.updateWnd({
+            title: this.#titleText,
+            album: this.#albumText,
+            artists: this.#artistsText,
+            albumArtChanged: artChanged
+        });
+    }
 
+    #updateLabels(p : PlayerInfo) : void {
         this.#title.text = this.#titleText = p.title || _g("No Title");
         this.#artist.text = this.#artistsText = p.artists?.join(_g(" / ")) || _g("No Artist");
         this.#albumText = p.album || "";
+
+        if(p.status === "Paused" || p.status === "Stopped") {
+            this.#pauseIcon.icon_name = "media-playback-start-symbolic";
+        } else {
+            this.#pauseIcon.icon_name = "media-playback-pause-symbolic";
+        }
+    }
+
+    async #updateArtAsync(p : PlayerInfo) : Promise<void> {
 
         let uri : string;
         if(p.artUrl) uri = p.artUrl;
@@ -333,19 +355,6 @@ export class Popup {
             this.#menuBox.style = `background-image: url('${blurred}');`;
         }
         this.#coverUri = uri;
-
-        if(p.status === "Paused" || p.status === "Stopped") {
-            this.#pauseIcon.icon_name = "media-playback-start-symbolic";
-        } else {
-            this.#pauseIcon.icon_name = "media-playback-pause-symbolic";
-        }
-
-        this.#wndBus?.updateWnd({
-            title: this.#titleText,
-            album: this.#albumText,
-            artists: this.#artistsText,
-            albumArtChanged: true
-        });
     }
 
 }
