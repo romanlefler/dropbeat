@@ -337,7 +337,7 @@ export class Popup {
         if(p.artUrl) uri = p.artUrl;
         else uri = `file://${this.#metadata.path}/music.png`;
 
-        if(this.#coverUri !== uri && uri) {
+        if(this.#coverUri !== uri) {
             let art : string, blurred : string;
             try {
                 const allowHttp = this.#gSettings.get_boolean("album-cover-internet");
@@ -357,8 +357,10 @@ export class Popup {
 
             this.#coverImg.style = `background-image: url('${imgArt}');`;
             this.#menuBox.style = `background-image: url('${imgBlurred}');`;
+
+            this.#coverUri = uri;
         }
-        this.#coverUri = uri;
+
     }
 
 }
