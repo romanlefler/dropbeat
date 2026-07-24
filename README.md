@@ -4,6 +4,10 @@ Dropbeat is a GNOME shell extension that shows a cool card to control your media
 
 ![Screenshot](./docs/screenshot.png)
 
+You can also click the album art to get a fullscreen display window.
+
+![Fullscreen Screenshot](./docs/fullscreen.png)
+
 ## Requires
 
 ImageMagick (available in pretty much all distros' official repos)

@@ -17,7 +17,7 @@
 
 ## Bug Fixes
 
-- Closing the currently active player now causes the app to show another one if one is playing instead of diappearing
+- Closing the currently active player now causes the app to show another one if one is playing instead of disappearing
 
 # v49.0.0
 
