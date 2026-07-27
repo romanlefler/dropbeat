@@ -1,3 +1,5 @@
+#!@GJS@ -m
+
 /*
     Copyright 2026 Roman Lefler
 
