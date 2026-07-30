@@ -4,9 +4,13 @@ Dropbeat is a GNOME shell extension that shows a cool card to control your media
 
 ![Screenshot](./docs/screenshot.png)
 
+Screenshot uses art from [Magnific](https://www.magnific.com/free-vector/gradient-album-cover-template_49658978.htm).
+
 You can also click the album art to get a fullscreen display window.
 
 ![Fullscreen Screenshot](./docs/fullscreen.png)
+
+Screenshot uses art from [Magnific](https://www.magnific.com/free-vector/gradient-album-cover-template_49659001.htm).
 
 ## Requires
 
