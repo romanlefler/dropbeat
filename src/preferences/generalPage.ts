@@ -22,49 +22,24 @@ import Gdk from "gi://Gdk";
 import Adw from "gi://Adw";
 import { gettext as _g } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 import { ShortcutRow } from "./shortcutrow.js";
+import { listMonitors, MonitorFingerprint } from "./monitors.js";
 
 function setVisibilites(value : boolean, ...widgets : Gtk.Widget[]) {
     for(let w of widgets) w.visible = value;
 }
 
-interface MonitorFingerprint {
-    manufacturer : string;
-    model : string;
-    widthmm : number;
-    heightmm : number;
-}
-
-interface MonitorOption {
-    label : string;
-    fingerprint : MonitorFingerprint;
-}
-
-function listMonitors() : MonitorOption[] {
-    const options : MonitorOption[] = [];
-    const display = Gdk.Display.get_default();
-    if(!display) return options;
-
-    const monitors = display.get_monitors();
-    for(let i = 0; i < monitors.get_n_items(); i++) {
-        const monitor = monitors.get_item(i) as Gdk.Monitor | null;
-        if(!monitor) continue;
-
-        const manufacturer = monitor.get_manufacturer() ?? "";
-        const model = monitor.get_model() ?? _g("Unknown Display");
-        const connector = monitor.get_connector() ?? _g("Unknown Connection");
-        options.push({
-            label: `${manufacturer} ${model}: ${connector}`.trim(),
-            fingerprint: {
-                manufacturer: manufacturer,
-                model: monitor.get_model() ?? "",
-                widthmm: monitor.get_width_mm(),
-                heightmm: monitor.get_height_mm()
-            }
-        });
-    }
-
-    return options;
-}
+const MONITOR_ALIASES : Record<string, string> = {
+    "SAM": "Samsung",
+    "DEL": "Dell",
+    "AUS": "ASUS",
+    "ACR": "Acer",
+    "HWP": "HP",
+    "HPN": "HP",
+    "LEN": "Lenovo",
+    "GSM": "LG",
+    "APP": "Apple",
+    "MSI": "MSI"
+};
 
 export class GeneralPage extends Adw.PreferencesPage {
 
