@@ -20,7 +20,7 @@ import GLib from "gi://GLib";
 import Soup from "gi://Soup";
 
 const genericUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " +
-    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.10 Safari/605.1.1";
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.3";
 let soup : Soup.Session | null = null;
 
 export interface HttpResponse<T> {
@@ -32,11 +32,17 @@ export function setUpSoup() : void {
     soup = new Soup.Session({
         user_agent: genericUserAgent
     });
+    soup.set_timeout(10);
 }
 
 export function freeSoup() : void {
     soup?.abort();
     soup = null;
+}
+
+export function setSoupTimeout(seconds : number) : void {
+    if(!soup) throw new Error("Soup not initialized.");
+    soup.set_timeout(seconds);
 }
 
 /**

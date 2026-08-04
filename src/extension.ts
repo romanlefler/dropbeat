@@ -25,7 +25,7 @@ import { gettext as extensionGettext } from "resource:///org/gnome/shell/extensi
 import { setUpGettext } from "./gettext.js";
 import { setBusSession, mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPlayer, mediaTogglePause, mediaPrev, mediaNext } from "./mpris.js";
 import { Popup } from "./popup.js";
-import { setUpSoup, freeSoup } from "./soup.js";
+import { setUpSoup, freeSoup, setSoupTimeout } from "./soup.js";
 import { keybindingSetup, keybindingCleanup } from "./keybinding.js";
 import { WndBus } from "./wndbus.js";
 import { ensureMagick } from "./prereqs.js";
@@ -39,15 +39,22 @@ export default class DropbeatExtension extends Extension {
     #wndBus? : WndBus;
 
     #settingsHandler : number | undefined;
+    #timeoutSettingsHandler : number | undefined;
 
     /**
      * Called by GNOME Extensions when this extension is enabled.
      * This is the entry point.
      */
     enable() : void {
+        this.#gsettings = this.getSettings();
+
         setUpGettext(extensionGettext);
         setUpSoup();
-        this.#gsettings = this.getSettings();
+        setSoupTimeout(this.#gsettings.get_double("request-timeout"));
+        this.#timeoutSettingsHandler = this.#gsettings.connect(
+            "changed::request-timeout",
+            settings => setSoupTimeout(settings.get_double("request-timeout"))
+        );
 
         this.#wndBus = new WndBus(this);
         setBusSession(Gio.DBus.session);
@@ -103,6 +110,10 @@ export default class DropbeatExtension extends Extension {
      * Called by GNOME Extensions when this extension is disabled.
      */
     disable() : void {
+        if(this.#timeoutSettingsHandler !== undefined) {
+            this.#gsettings.disconnect(this.#timeoutSettingsHandler);
+            this.#timeoutSettingsHandler = undefined;
+        }
         if(this.#settingsHandler !== undefined) {
             this.#gsettings.disconnect(this.#settingsHandler);
             this.#settingsHandler = undefined;

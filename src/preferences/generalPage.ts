@@ -87,15 +87,35 @@ export class GeneralPage extends Adw.PreferencesPage {
             settings.set_boolean("https-only", w.active);
             settings.apply();
         });
+        const requestTimeout = new Adw.SpinRow({
+            title: _g("Request Timeout"),
+            subtitle: _g("Album cover request timeout in seconds"),
+            adjustment: new Gtk.Adjustment({
+                lower: 1,
+                upper: 86400,
+                step_increment: 1,
+                page_increment: 10,
+                value: settings.get_double("request-timeout")
+            }),
+            digits: 1,
+            numeric: true,
+            sensitive: useInternet.active
+        });
+        requestTimeout.connect("notify::value", (w : Adw.SpinRow) => {
+            settings.set_double("request-timeout", w.value);
+            settings.apply();
+        });
         useInternet.connect("notify::active", (w : Adw.SwitchRow) => {
             settings.set_boolean("album-cover-internet", w.active);
             settings.apply();
 
             httpsOnly.sensitive = w.active;
+            requestTimeout.sensitive = w.active;
         });
 
         internetGroup.add(useInternet);
         internetGroup.add(httpsOnly);
+        internetGroup.add(requestTimeout);
 
         this.add(keybindingsGroup);
         this.add(internetGroup);

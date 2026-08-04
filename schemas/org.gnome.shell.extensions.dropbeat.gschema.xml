@@ -17,5 +17,10 @@
             <default>true</default>
             <summary>Block album cover connections over plain HTTP</summary>
         </key>
+        <key name="request-timeout" type="d">
+            <range min="0.0" max="86400.0"/>
+            <default>10.0</default>
+            <summary>Album cover request timeout in seconds</summary>
+        </key>
     </schema>
 </schemalist>
