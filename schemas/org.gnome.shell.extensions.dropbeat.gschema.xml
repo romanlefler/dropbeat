@@ -13,6 +13,10 @@
             <default>true</default>
             <summary>Show playback progress in the popup card</summary>
         </key>
+        <key name="hide-browsers" type="b">
+            <default>false</default>
+            <summary>Hide browser media players</summary>
+        </key>
         <key name="album-cover-internet" type="b">
             <default>true</default>
             <summary>Allow fetching album covers from the internet (http/https)</summary>

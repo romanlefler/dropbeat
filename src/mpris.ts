@@ -27,6 +27,16 @@ let mediaChangedCallback: PlayerCallback | null = null;
 let proxies : Record<string, Gio.DBusProxy> = { };
 let subs : number[] = [ ];
 
+const WEB_BROWSER_IDS = [
+    "firefox", // Firefox, LibreWolf, Waterfox
+    "chrome",
+    "chromium", // Chromium, Opera
+    "brave",
+    "edge",
+    "vivaldi",
+    "plasma_browser_integration" // KDE Plasma Browser
+];
+
 export function setBusSession(dbusSession : Gio.DBusConnection | null) {
     bus = dbusSession;
     proxies = { };
@@ -137,25 +147,47 @@ function mediaChanged(proxy : Gio.DBusProxy, callback : () => void) : void {
     });
 }
 
+function queryProperty(
+    proxy : Gio.DBusProxy, interfaceName : string, propertyName : string
+) : GLib.Variant | null {
+    const result = proxy.get_connection().call_sync(
+        proxy.get_name(),
+        proxy.get_object_path(),
+        "org.freedesktop.DBus.Properties",
+        "Get",
+        new GLib.Variant("(ss)", [ interfaceName, propertyName ]),
+        new GLib.VariantType("(v)"),
+        Gio.DBusCallFlags.NONE,
+        1000,
+        null
+    );
+    return result.get_child_value(0).get_variant();
+}
+
 function queryPosition(proxy : Gio.DBusProxy) : number | null {
     let positionV = proxy.get_cached_property("Position");
     try {
-        const result = proxy.get_connection().call_sync(
-            proxy.get_name(),
-            proxy.get_object_path(),
-            "org.freedesktop.DBus.Properties",
-            "Get",
-            new GLib.Variant("(ss)", [ "org.mpris.MediaPlayer2.Player", "Position" ]),
-            new GLib.VariantType("(v)"),
-            Gio.DBusCallFlags.NONE,
-            1000,
-            null
-        );
-        positionV = result.get_child_value(0).get_variant();
+        positionV = queryProperty(proxy, "org.mpris.MediaPlayer2.Player", "Position");
     } catch(e) {
         console.warn(`Dropbeat: Failed to query current media position: ${e}`);
     }
     return i64(positionV);
+}
+
+export function isWebBrowser(name : string) : boolean {
+    // You could try to dynamically detect web browsers by inspecting
+    // the category in the Desktop file, however Chromium browsers do
+    // not implement the desktop entry MPRIS property, which leaves
+    // us out of luck for most browsers.
+    console.error(`Is Web Browser? ${name}`);
+    const prefix = "org.mpris.MediaPlayer2.";
+    if (!name.startsWith(prefix)) return false;
+    // The ID match is pretty lenient to account for some weird cases
+    // like appending suffices like ".instance9148"
+    const id = name.slice(prefix.length).toLowerCase();
+    return WEB_BROWSER_IDS.some(browser => {
+        return id === browser || id.startsWith(`${browser}.`);
+    });
 }
 
 export interface PlayerInfo {

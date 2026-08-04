@@ -40,6 +40,10 @@ export async function getMediaPlayers() : Promise<string[]> {
     return [ "org.mpris.MediaPlayer2.MockPlayer" ];
 }
 
+export function isWebBrowser(name : string) : boolean {
+    return false;
+}
+
 export function mediaQueryPlayer(name : string) : PlayerInfo | null {
     return {
         title: "Everything Is Alright",

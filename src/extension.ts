@@ -23,7 +23,7 @@ import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { gettext as extensionGettext } from "resource:///org/gnome/shell/extensions/extension.js";
 import { setUpGettext } from "./gettext.js";
-import { setBusSession, mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPlayer, mediaTogglePause, mediaPrev, mediaNext, mediaSeek, mediaRaise } from "./mpris.js";
+import { setBusSession, mediaFree, mediaLaunched, getMediaPlayers, isWebBrowser, mediaQueryPlayer, mediaTogglePause, mediaPrev, mediaNext, mediaSeek, mediaRaise } from "./mpris.js";
 import { Popup } from "./popup.js";
 import { setUpSoup, freeSoup, setSoupTimeout } from "./soup.js";
 import { keybindingSetup, keybindingCleanup } from "./keybinding.js";
@@ -37,6 +37,7 @@ export default class DropbeatExtension extends Extension {
     #indicator? : PanelMenu.Button;
     #panelIcon? : St.Icon;
     #wndBus? : WndBus;
+    #currentPlayer : string | null = null;
 
     #settingsHandler : number | undefined;
     #timeoutSettingsHandler : number | undefined;
@@ -70,7 +71,20 @@ export default class DropbeatExtension extends Extension {
 
     async #pickArbitraryPlayer() : Promise<string | null> {
         const players = await getMediaPlayers();
-        return players.length > 0 ? players[0] : null;
+        return players.find(name => !this.#isPlayerHidden(name)) ?? null;
+    }
+
+    #isPlayerHidden(name : string) : boolean {
+        return this.#gsettings.get_boolean("hide-browsers") && isWebBrowser(name);
+    }
+
+    async #refreshPlayerSelection() : Promise<void> {
+        const player = await this.#pickArbitraryPlayer();
+        if(player) this.#mediaChanged(player);
+        else {
+            this.#currentPlayer = null;
+            this.#destroyIndicator();
+        }
     }
 
     async #enableAsync() : Promise<void> {
@@ -82,12 +96,12 @@ export default class DropbeatExtension extends Extension {
         }
 
         await mediaLaunched(name => {
+            if(this.#isPlayerHidden(name)) return;
             this.#mediaChanged(name);
         }, name => {
-            this.#pickArbitraryPlayer().then(pl => {
-                this.#mediaChanged(pl ?? name);
-            });
+            if(name === this.#currentPlayer) this.#refreshPlayerSelection();
         }, name => {
+            if(this.#isPlayerHidden(name)) return;
             this.#mediaChanged(name);
         });
 
@@ -98,6 +112,11 @@ export default class DropbeatExtension extends Extension {
             if(k === "open-menu-keybinding") {
                 keybindingCleanup();
                 keybindingSetup(this.#gsettings, this.#openMenuKeybind.bind(this));
+            } else if(k === "hide-browsers") {
+                if(
+                    !this.#currentPlayer ||
+                    (this.#gsettings.get_boolean("hide-browsers") && isWebBrowser(this.#currentPlayer))
+                ) this.#refreshPlayerSelection();
             }
         });
     }
@@ -120,6 +139,7 @@ export default class DropbeatExtension extends Extension {
         }
         this.#wndBus?.free();
         this.#wndBus = undefined;
+        this.#currentPlayer = null;
         freeSoup();
         mediaFree();
         keybindingCleanup();
@@ -180,14 +200,20 @@ export default class DropbeatExtension extends Extension {
     }
 
     #mediaChanged(name : string) : void {
+        if(this.#isPlayerHidden(name)) return;
         const info = mediaQueryPlayer(name);
 
-        if(!info) this.#destroyIndicator();
-        else if(!this.#indicator) this.#createIndicator();
-
-        if(info) {
-            this.#popup?.updateGui(name, info);
+        if(!info) {
+            if(name === this.#currentPlayer) {
+                this.#currentPlayer = null;
+                this.#destroyIndicator();
+            }
+            return;
         }
+        if(!this.#indicator) this.#createIndicator();
+
+        this.#currentPlayer = name;
+        this.#popup?.updateGui(name, info);
     }
 
 }

@@ -113,6 +113,20 @@ export class GeneralPage extends Adw.PreferencesPage {
         });
         fullscreenGroup.add(fullscreenMonitor);
 
+        const behaviorGroup = new Adw.PreferencesGroup({
+            title: _g("Behavior")
+        });
+        const hideBrowsers = new Adw.SwitchRow({
+            title: _g("Hide Browsers"),
+            subtitle: _g("Don't show web browsers like %s, %s, etc.").format("Firefox", "Brave"),
+            active: settings.get_boolean("hide-browsers")
+        });
+        hideBrowsers.connect("notify::active", (w : Adw.SwitchRow) => {
+            settings.set_boolean("hide-browsers", w.active);
+            settings.apply();
+        });
+        behaviorGroup.add(hideBrowsers);
+
         const keybindingsGroup = new Adw.PreferencesGroup({
             title: _g("Keybindings"),
             description: _g("Configure keyboard shortcuts")
@@ -195,6 +209,7 @@ export class GeneralPage extends Adw.PreferencesPage {
         this.add(popupGroup);
         this.add(keybindingsGroup);
         this.add(fullscreenGroup);
+        this.add(behaviorGroup);
         this.add(internetGroup);
     }
 
