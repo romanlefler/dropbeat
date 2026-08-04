@@ -94,6 +94,7 @@ interface MonitorFingerprint {
     model : string;
     widthmm : number;
     heightmm : number;
+    connector? : string;
 }
 
 function findMonitor(display: Gdk.Display, fingerprintJson: string): Gdk.Monitor | null {
@@ -106,6 +107,7 @@ function findMonitor(display: Gdk.Display, fingerprintJson: string): Gdk.Monitor
     }
 
     const monitors = display.get_monitors();
+    let fallback : Gdk.Monitor | null = null;
 
     for(let i = 0; i < monitors.get_n_items(); i++) {
         const monitor = monitors.get_item(i) as Gdk.Monitor;
@@ -114,14 +116,18 @@ function findMonitor(display: Gdk.Display, fingerprintJson: string): Gdk.Monitor
             (monitor.get_model() ?? "") === fingerprint.model &&
             monitor.get_width_mm() === fingerprint.widthmm &&
             monitor.get_height_mm() === fingerprint.heightmm
-        ) return monitor;
+        ) {
+            fallback ??= monitor;
+            if((monitor.get_connector() ?? "") === fingerprint.connector)
+                return monitor;
+        }
     }
-    return null;
+    return fallback;
 }
 
 function main(argv: string[]) {
     // Pass the monitor fingerprint as JSON, or an empty string for auto
-    // { "manufacturer", "model", "widthmm", "heightmm" }
+    // { "manufacturer", "model", "widthmm", "heightmm", "connector" }
     const monitorFingerprint : string = argv[0] || "";
 
     const a : UpdateWndArgs = {

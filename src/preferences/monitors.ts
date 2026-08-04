@@ -23,6 +23,7 @@ export interface MonitorFingerprint {
     model : string;
     widthmm : number;
     heightmm : number;
+    connector : string;
 }
 
 export interface MonitorOption {
@@ -106,11 +107,11 @@ export function listMonitors() : MonitorOption[] {
                 manufacturer: monitor.get_manufacturer() ?? "",
                 model: monitor.get_model() ?? "",
                 widthmm: monitor.get_width_mm(),
-                heightmm: monitor.get_height_mm()
+                heightmm: monitor.get_height_mm(),
+                connector: monitor.get_connector() ?? ""
             }
         });
     }
 
     return options;
 }
-
