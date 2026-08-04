@@ -54,33 +54,20 @@ export class GeneralPage extends Adw.PreferencesPage {
             icon_name: "preferences-system-symbolic"
         });
 
-        const keybindingsGroup = new Adw.PreferencesGroup({
-            title: _g("Keybindings"),
-            description: _g("Configure keyboard shortcuts")
+        const popupGroup = new Adw.PreferencesGroup({
+            title: _g("Popup"),
+            description: _g("Configure the popup card")
         });
-        const openMenuShortcut = new ShortcutRow({
-            title: _g("Desktop Shortcut"),
-            subtitle: _g("Desktop keyboard shortcut to open/close the card"),
-            value: settings.get_strv("open-menu-keybinding")[0] || null
+        const showProgressBar = new Adw.SwitchRow({
+            title: _g("Progress Bar"),
+            subtitle: _g("Show playback progress in the popup card"),
+            active: settings.get_boolean("show-progress-bar")
         });
-        openMenuShortcut.addValueChangedListener((v : string | null) => {
-            openMenuSuper.active = openMenuShortcut.getSuper();
-
-            settings.set_strv("open-menu-keybinding", v ? [ v ] : [ ]);
+        showProgressBar.connect("notify::active", (w : Adw.SwitchRow) => {
+            settings.set_boolean("show-progress-bar", w.active);
             settings.apply();
         });
-
-        const openMenuSuper = new Adw.SwitchRow({
-            title: _g("Include Super Key?"),
-            subtitle: _g("Insert Super key into above shortcut"),
-            active: openMenuShortcut.getSuper()
-        });
-        openMenuSuper.connect("notify::active", (w : Adw.SwitchRow) => {
-            openMenuShortcut.setSuper(w.active);
-        });
-
-        keybindingsGroup.add(openMenuShortcut);
-        keybindingsGroup.add(openMenuSuper);
+        popupGroup.add(showProgressBar);
 
         const fullscreenGroup = new Adw.PreferencesGroup({
             title: _g("Fullscreen"),
@@ -125,6 +112,35 @@ export class GeneralPage extends Adw.PreferencesPage {
             settings.apply();
         });
         fullscreenGroup.add(fullscreenMonitor);
+
+        const keybindingsGroup = new Adw.PreferencesGroup({
+            title: _g("Keybindings"),
+            description: _g("Configure keyboard shortcuts")
+        });
+        const openMenuShortcut = new ShortcutRow({
+            title: _g("Desktop Shortcut"),
+            subtitle: _g("Desktop keyboard shortcut to open/close the card"),
+            value: settings.get_strv("open-menu-keybinding")[0] || null
+        });
+        openMenuShortcut.addValueChangedListener((v : string | null) => {
+            openMenuSuper.active = openMenuShortcut.getSuper();
+
+            settings.set_strv("open-menu-keybinding", v ? [ v ] : [ ]);
+            settings.apply();
+        });
+
+        const openMenuSuper = new Adw.SwitchRow({
+            title: _g("Include Super Key?"),
+            subtitle: _g("Insert Super key into above shortcut"),
+            active: openMenuShortcut.getSuper()
+        });
+        openMenuSuper.connect("notify::active", (w : Adw.SwitchRow) => {
+            openMenuShortcut.setSuper(w.active);
+        });
+
+        keybindingsGroup.add(openMenuShortcut);
+        keybindingsGroup.add(openMenuSuper);
+
 
         const internetGroup = new Adw.PreferencesGroup({
             title: _g("Internet"),
@@ -176,6 +192,7 @@ export class GeneralPage extends Adw.PreferencesPage {
         internetGroup.add(httpsOnly);
         internetGroup.add(requestTimeout);
 
+        this.add(popupGroup);
         this.add(keybindingsGroup);
         this.add(fullscreenGroup);
         this.add(internetGroup);

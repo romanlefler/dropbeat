@@ -9,6 +9,10 @@
             <default>[]</default>
             <summary>Keyboard shortcut to open menu</summary>
         </key>
+        <key name="show-progress-bar" type="b">
+            <default>true</default>
+            <summary>Show playback progress in the popup card</summary>
+        </key>
         <key name="album-cover-internet" type="b">
             <default>true</default>
             <summary>Allow fetching album covers from the internet (http/https)</summary>

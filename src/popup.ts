@@ -91,6 +91,8 @@ export class Popup {
     #menuBox : St.BoxLayout;
     #menu : PopupMenu.PopupMenu;
     #menuOpenHandler : number;
+    #progressSettingHandler : number;
+    #cardBox : St.BoxLayout;
 
     #coverBin : St.Widget;
     #coverImg : St.Widget;
@@ -106,6 +108,7 @@ export class Popup {
     #progressRemaining : St.Widget;
     #progressInfo : PlayerInfo | null = null;
     #progressTimer : number | null = null;
+    #progressEnabled : boolean = false;
 
     #playerName : string | null = null;
     readonly #gSettings : Gio.Settings;
@@ -140,6 +143,7 @@ export class Popup {
             x_expand: true,
             y_expand: true
         });
+        this.#cardBox = box;
         this.#coverImg = new St.Button({
             style_class: "dropbeat-text dropbeat-cover",
             x_expand: true,
@@ -217,10 +221,13 @@ export class Popup {
         setPointer(this.#progressBar);
         // @ts-ignore
         this.#menuOpenHandler = this.#menu.connect("open-state-changed", (_menu, isOpen) => {
-            if(isOpen) this.#startProgressTimer();
+            if(isOpen && this.#progressEnabled) this.#startProgressTimer();
             else this.#stopProgressTimer();
         });
-        if(this.#menu.isOpen) this.#startProgressTimer();
+        this.#progressSettingHandler = this.#gSettings.connect(
+            "changed::show-progress-bar",
+            settings => this.#setProgressEnabled(settings.get_boolean("show-progress-bar"))
+        );
 
         this.#prevButton.connect("clicked", () => {
             const name = this.#playerName;
@@ -241,7 +248,7 @@ export class Popup {
         box.add_child(this.#title);
         box.add_child(this.#artist);
         box.add_child(controlsBar);
-        box.add_child(this.#progressBar);
+        this.#setProgressEnabled(this.#gSettings.get_boolean("show-progress-bar"));
 
         this.#menuItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
         this.#menuItem.actor.add_child(box);
@@ -353,6 +360,7 @@ export class Popup {
     }
 
     #updateProgressBar() : void {
+        if(!this.#progressEnabled) return;
         const width = this.#progressBar.allocation.get_width();
         const height = this.#progressBar.allocation.get_height();
         if(width <= 0) return;
@@ -374,6 +382,20 @@ export class Popup {
         this.#progressRemaining.set_width(width - progressWidth);
     }
 
+    #setProgressEnabled(enabled : boolean) : void {
+        if(enabled === this.#progressEnabled) return;
+        this.#progressEnabled = enabled;
+
+        if(enabled) {
+            this.#cardBox.add_child(this.#progressBar);
+            this.#updateProgressBar();
+            if(this.#menu.isOpen) this.#startProgressTimer();
+        } else {
+            this.#stopProgressTimer();
+            this.#cardBox.remove_child(this.#progressBar);
+        }
+    }
+
     #startProgressTimer() : void {
         if(this.#progressTimer !== null) return;
         this.#updateProgressBar();
@@ -392,6 +414,7 @@ export class Popup {
     free() {
         this.#stopProgressTimer();
         this.#menu.disconnect(this.#menuOpenHandler);
+        this.#gSettings.disconnect(this.#progressSettingHandler);
         this.#menuItem.destroy();
         this.#menuItem = null!;
     }
