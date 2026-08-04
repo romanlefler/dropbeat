@@ -89,12 +89,46 @@ function loadCss(dir : string) {
     }
 }
 
+interface MonitorFingerprint {
+    manufacturer : string;
+    model : string;
+    widthmm : number;
+    heightmm : number;
+}
+
+function findMonitor(display: Gdk.Display, fingerprintJson: string): Gdk.Monitor | null {
+    let fingerprint : MonitorFingerprint;
+    try {
+        fingerprint = JSON.parse(fingerprintJson) as MonitorFingerprint;
+    } catch(e) {
+        console.warn(`Invalid monitor fingerprint: ${e}`);
+        return null;
+    }
+
+    const monitors = display.get_monitors();
+
+    for(let i = 0; i < monitors.get_n_items(); i++) {
+        const monitor = monitors.get_item(i) as Gdk.Monitor;
+        if(
+            (monitor.get_manufacturer() ?? "") === fingerprint.manufacturer &&
+            (monitor.get_model() ?? "") === fingerprint.model &&
+            monitor.get_width_mm() === fingerprint.widthmm &&
+            monitor.get_height_mm() === fingerprint.heightmm
+        ) return monitor;
+    }
+    return null;
+}
+
 function main(argv: string[]) {
+    // Pass the monitor fingerprint as JSON, or an empty string for auto
+    // { "manufacturer", "model", "widthmm", "heightmm" }
+    const monitorFingerprint : string = argv[0] || "";
+
     const a : UpdateWndArgs = {
-        title: argv[0] || "No Title",
-        album: argv[1] || "",
-        artists: argv[2] || "No Artist",
-        albumArtChanged: argv[3] === "1"
+        title: argv[1] || "No Title",
+        album: argv[2] || "",
+        artists: argv[3] || "No Artist",
+        albumArtChanged: argv[4] === "1"
     };
     const app = new Gtk.Application({
         application_id: APP_ID,
@@ -119,12 +153,16 @@ function main(argv: string[]) {
 
         beginReadCmdline(design, uiMan);
 
+        let monitor : Gdk.Monitor | null = null;
+        if(monitorFingerprint) monitor = findMonitor(wnd.get_display(), monitorFingerprint);
+
+        if(monitor) wnd.fullscreen_on_monitor(monitor);
+        else wnd.fullscreen();
+
         wnd.present();
-        wnd.fullscreen();
     });
 
     return app.run([]);
 }
 
 main(ARGV);
-

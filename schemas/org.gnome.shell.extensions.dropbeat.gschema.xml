@@ -22,5 +22,9 @@
             <default>10.0</default>
             <summary>Album cover request timeout in seconds</summary>
         </key>
+        <key name="fullscreen-monitor" type="s">
+            <default>''</default>
+            <summary>JSON fingerprint of the monitor used for fullscreen mode, or empty for automatic selection</summary>
+        </key>
     </schema>
 </schemalist>

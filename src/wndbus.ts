@@ -82,13 +82,14 @@ export class WndBus {
         this.#stdin = null;
     }
 
-    wndFullscreen(args : UpdateWndArgs) : void {
+    wndFullscreen(args : UpdateWndArgs, monitorFingerprint : string) : void {
         if(this.#proc) this.free();
 
         const argv : string[] = [
             "gjs",
             "-m",
             this.#wndMainPath,
+            monitorFingerprint,
             args.title || _g("No Title"),
             args.album || "",
             args.artists || _g("No Artist"),

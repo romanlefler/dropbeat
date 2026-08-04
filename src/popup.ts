@@ -149,7 +149,7 @@ export class Popup {
                 album: this.#albumText,
                 artists: this.#artistsText,
                 albumArtChanged: true
-            });
+            }, this.#gSettings.get_string("fullscreen-monitor"));
         });
 
         this.#title = new St.Label({
