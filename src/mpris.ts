@@ -138,12 +138,21 @@ async function createProxy(name : string) : Promise<Gio.DBusProxy> {
 }
 
 function mediaChanged(proxy : Gio.DBusProxy, callback : () => void) : void {
-    proxy.connect("g-properties-changed", (_, props) => {
-        const changed : string[] = props.deep_unpack();
-        if("Metadata" in changed || "PlaybackStatus" in changed) callback();
+    proxy.connect("g-properties-changed", (_, props, invalidated) => {
+        const changed = props.deep_unpack() as Record<string, unknown>;
+        if(
+            "Metadata" in changed ||
+            "PlaybackStatus" in changed ||
+            "Position" in changed ||
+            invalidated.includes("Metadata") ||
+            invalidated.includes("PlaybackStatus")
+        ) callback();
     });
-    proxy.connect("g-signal", (_proxy, _sender, signal) => {
-        if(signal === "Seeked") callback();
+    proxy.connect("g-signal", (_proxy, _sender, signal, parameters) => {
+        if(signal === "Seeked") {
+            proxy.set_cached_property("Position", parameters.get_child_value(0));
+            callback();
+        }
     });
 }
 
@@ -179,7 +188,6 @@ export function isWebBrowser(name : string) : boolean {
     // the category in the Desktop file, however Chromium browsers do
     // not implement the desktop entry MPRIS property, which leaves
     // us out of luck for most browsers.
-    console.error(`Is Web Browser? ${name}`);
     const prefix = "org.mpris.MediaPlayer2.";
     if (!name.startsWith(prefix)) return false;
     // The ID match is pretty lenient to account for some weird cases

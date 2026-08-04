@@ -173,6 +173,11 @@ export default class DropbeatExtension extends Extension {
         this.#popup?.free();
         if(indic.menu instanceof PopupMenu.PopupMenu) {
             if(!this.#wndBus) throw new Error("Dropbeat: WndBus is undefined in createIndicator.");
+            // @ts-ignore
+            indic.menu.connect("open-state-changed", (_menu, isOpen) => {
+                const name = this.#currentPlayer;
+                if(isOpen && name) this.#mediaChanged(name);
+            });
             this.#popup = new Popup({
                 menu: indic.menu,
                 metadata: this.metadata,
