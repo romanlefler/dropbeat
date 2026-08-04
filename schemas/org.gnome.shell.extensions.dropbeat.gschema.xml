@@ -13,5 +13,9 @@
             <default>true</default>
             <summary>Allow fetching album covers from the internet (http/https)</summary>
         </key>
+        <key name="https-only" type="b">
+            <default>true</default>
+            <summary>Block album cover connections over plain HTTP</summary>
+        </key>
     </schema>
 </schemalist>

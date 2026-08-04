@@ -76,12 +76,26 @@ export class GeneralPage extends Adw.PreferencesPage {
             subtitle: _g("Allow fetching album covers over HTTP/HTTPS"),
             active: settings.get_boolean("album-cover-internet")
         });
+
+        const httpsOnly = new Adw.SwitchRow({
+            title: _g("HTTPS Only"),
+            subtitle: _g("Block album cover connections over plain HTTP"),
+            active: settings.get_boolean("https-only"),
+            sensitive: useInternet.active
+        });
+        httpsOnly.connect("notify::active", (w : Adw.SwitchRow) => {
+            settings.set_boolean("https-only", w.active);
+            settings.apply();
+        });
         useInternet.connect("notify::active", (w : Adw.SwitchRow) => {
             settings.set_boolean("album-cover-internet", w.active);
             settings.apply();
+
+            httpsOnly.sensitive = w.active;
         });
 
         internetGroup.add(useInternet);
+        internetGroup.add(httpsOnly);
 
         this.add(keybindingsGroup);
         this.add(internetGroup);

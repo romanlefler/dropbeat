@@ -341,13 +341,14 @@ export class Popup {
             let art : string, blurred : string;
             try {
                 const allowHttp = this.#gSettings.get_boolean("album-cover-internet");
-                art = await getStandardCover(uri, allowHttp);
+                const isHttpsOnly = this.#gSettings.get_boolean("https-only");
+                art = await getStandardCover(uri, allowHttp, isHttpsOnly);
                 blurred = await getBlurredCover(art);
             } catch(e) {
                 if(e instanceof Gio.ResolverError || e instanceof BannedImageFormatError) {
                     console.warn(`Failed to process cover art "${uri}": ${e.message}\n${e.stack}\nEnd of error backtrace.\n`);
                     const f = `file://${this.#metadata.path}/music.png`;
-                    art = await getStandardCover(f, false);
+                    art = await getStandardCover(f, false, true);
                     blurred = await getBlurredCover(art);
                 } else throw e;
             }

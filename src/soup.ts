@@ -42,11 +42,15 @@ export function freeSoup() : void {
 /**
  * @throws Gio.ResolverError
  */
-export async function fetchBytes(uri : string) : Promise<HttpResponse<Uint8Array>> {
+export async function fetchBytesInternal(uri : string, allowRedirects : boolean, enforceHttps : boolean) : Promise<[ HttpResponse<Uint8Array>, Soup.Message ]> {
     if(!soup) throw new Error("Soup not initialized.");
 
     const msg = Soup.Message.new("GET", uri);
-    return new Promise<HttpResponse<Uint8Array>>((resolve, reject) => {
+    if(!msg) throw new Error("Invalid soup URI.");
+
+    if(!allowRedirects) msg.add_flags(Soup.MessageFlags.NO_REDIRECT);
+    if(enforceHttps && msg.get_uri().get_scheme() !== "https") throw new Error("HTTPS-only mode; not following plain HTTP.");
+    const response = new Promise<[ HttpResponse<Uint8Array>, Soup.Message ]>((resolve, reject) => {
         soup!.send_and_read_async(
             msg,
             GLib.PRIORITY_DEFAULT,
@@ -56,13 +60,50 @@ export async function fetchBytes(uri : string) : Promise<HttpResponse<Uint8Array
                     const status = msg.get_status();
                     const response = soup!.send_and_read_finish(result);
                     const data = response?.get_data();
-                    resolve({ status, data });
+                    resolve([ { status, data }, msg ]);
                 } catch(e) {
                     reject(e);
                 }
             }
         );
     });
+
+    return response;
+}
+
+export async function fetchBytes(uri : string, httpsOnly : boolean) : Promise<HttpResponse<Uint8Array>> {
+    if(httpsOnly) return fetchBytesHttpsOnly(uri);
+    else return (await fetchBytesInternal(uri, true, false))[0];
+}
+
+/**
+ * Follows HTTPS redirects, but rejects redirects to HTTP.
+ *
+ * @throws Gio.ResolverError
+ * @throws Error for non-HTTPS URIs or excessive redirects
+ */
+async function fetchBytesHttpsOnly(uri : string) : Promise<HttpResponse<Uint8Array>> {
+    if(!soup) throw new Error("Soup not initialized.");
+
+    let redirects = 0;
+    while(true) {
+        const [ response, msg ] = await fetchBytesInternal(uri, false, true);
+        if(!isRedirect(response.status)) return response;
+
+        const location = msg.get_response_headers().get_one("Location");
+        if(!location) return response;
+
+        if(redirects++ >= 10) throw new Error("Too many redirects.");
+
+        uri = msg
+            .get_uri()
+            .parse_relative(location, Soup.HTTP_URI_FLAGS)
+            .to_string();
+    }
+}
+
+function isRedirect(status : number) : boolean {
+    return [ 301, 302, 303, 307, 308 ].includes(status);
 }
 
 export function isOk(status : number) : boolean {

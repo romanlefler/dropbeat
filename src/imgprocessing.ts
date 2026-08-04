@@ -260,7 +260,7 @@ async function prepareStdCover(inFile : Gio.File) : Promise<Gio.File> {
     return outFile;
 }
 
-export async function getStandardCover(uri : string, fetchHttp : boolean) : Promise<string> {
+export async function getStandardCover(uri : string, fetchHttp : boolean, isHttpsOnly : boolean) : Promise<string> {
     try {
         const dir = await getDir();
         const file = Gio.File.new_for_path(`${dir}/standard`);
@@ -268,7 +268,7 @@ export async function getStandardCover(uri : string, fetchHttp : boolean) : Prom
 
             if(!fetchHttp) throw new Error("HTTP/HTTPS fetching not allowed.");
             const tmpFile = Gio.File.new_for_path(`${dir}/tempdownload`);
-            const { status, data } = await fetchBytes(uri);
+            const { status, data } = await fetchBytes(uri, isHttpsOnly);
             if(!isOk(status) || !data) throw new Error("Failed to fetch image.");
 
             await write(tmpFile, data);
