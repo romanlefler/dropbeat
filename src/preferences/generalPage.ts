@@ -112,6 +112,15 @@ export class GeneralPage extends Adw.PreferencesPage {
             settings.apply();
         });
         fullscreenGroup.add(fullscreenMonitor);
+        const hideCursor = new Adw.SwitchRow({
+            title: _g("Hide Cursor"),
+            active: settings.get_boolean("hide-cursor")
+        });
+        hideCursor.connect("notify::active", (w : Adw.SwitchRow) => {
+            settings.set_boolean("hide-cursor", w.active);
+            settings.apply();
+        });
+        fullscreenGroup.add(hideCursor);
 
         const behaviorGroup = new Adw.PreferencesGroup({
             title: _g("Behavior")

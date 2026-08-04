@@ -27,6 +27,11 @@ export interface UpdateWndArgs {
     albumArtChanged : boolean;
 }
 
+export interface CreateWndArgs {
+    monitor: string;
+    hideCursor: boolean;
+}
+
 export class WndBus {
 
     #extDir : Gio.File;
@@ -82,14 +87,14 @@ export class WndBus {
         this.#stdin = null;
     }
 
-    wndFullscreen(args : UpdateWndArgs, monitorFingerprint : string) : void {
+    wndFullscreen(args : UpdateWndArgs, createArgs : CreateWndArgs) : void {
         if(this.#proc) this.free();
 
         const argv : string[] = [
             "gjs",
             "-m",
             this.#wndMainPath,
-            monitorFingerprint,
+            JSON.stringify(createArgs),
             args.title || _g("No Title"),
             args.album || "",
             args.artists || _g("No Artist"),

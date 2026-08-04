@@ -97,6 +97,24 @@ interface MonitorFingerprint {
     connector? : string;
 }
 
+interface WndSettings {
+    monitor : string;
+    hideCursor : boolean;
+}
+
+function parseSettings(settingsJson : string) : WndSettings {
+    try {
+        const parsed = JSON.parse(settingsJson) as Partial<WndSettings>;
+        return {
+            monitor: typeof parsed.monitor === "string" ? parsed.monitor : "",
+            hideCursor: parsed.hideCursor === true
+        };
+    } catch(e) {
+        console.warn(`Invalid window settings: ${e}`);
+        return { monitor: "", hideCursor: false };
+    }
+}
+
 function findMonitor(display: Gdk.Display, fingerprintJson: string): Gdk.Monitor | null {
     let fingerprint : MonitorFingerprint;
     try {
@@ -126,9 +144,7 @@ function findMonitor(display: Gdk.Display, fingerprintJson: string): Gdk.Monitor
 }
 
 function main(argv: string[]) {
-    // Pass the monitor fingerprint as JSON, or an empty string for auto
-    // { "manufacturer", "model", "widthmm", "heightmm", "connector" }
-    const monitorFingerprint : string = argv[0] || "";
+    const settings = parseSettings(argv[0] || "{}");
 
     const a : UpdateWndArgs = {
         title: argv[1] || "No Title",
@@ -150,6 +166,7 @@ function main(argv: string[]) {
             application: app,
             title: "Dropbeat",
         });
+        if(settings.hideCursor) wnd.set_cursor_from_name("none");
 
         attachHandlers(app, wnd);
 
@@ -160,7 +177,7 @@ function main(argv: string[]) {
         beginReadCmdline(design, uiMan);
 
         let monitor : Gdk.Monitor | null = null;
-        if(monitorFingerprint) monitor = findMonitor(wnd.get_display(), monitorFingerprint);
+        if(settings.monitor) monitor = findMonitor(wnd.get_display(), settings.monitor);
 
         if(monitor) wnd.fullscreen_on_monitor(monitor);
         else wnd.fullscreen();

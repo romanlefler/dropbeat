@@ -34,5 +34,9 @@
             <default>''</default>
             <summary>JSON fingerprint of the monitor used for fullscreen mode, or empty for automatic selection</summary>
         </key>
+        <key name="hide-cursor" type="b">
+            <default>false</default>
+            <summary>Hide the cursor in the fullscreen window</summary>
+        </key>
     </schema>
 </schemalist>

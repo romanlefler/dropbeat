@@ -168,7 +168,10 @@ export class Popup {
                 album: this.#albumText,
                 artists: this.#artistsText,
                 albumArtChanged: true
-            }, this.#gSettings.get_string("fullscreen-monitor"));
+            }, {
+                monitor: this.#gSettings.get_string("fullscreen-monitor"),
+                hideCursor: this.#gSettings.get_boolean("hide-cursor")
+            });
         });
 
         this.#title = new St.Button({
