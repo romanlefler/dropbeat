@@ -23,6 +23,7 @@ import { PlayerInfo, PlayerCallback } from "./mpris.js";
 export type { PlayerInfo, PlayerCallback } from "./mpris.js"
 
 let isPlaying : boolean = true;
+let positionSeconds : number = 103.5;
 let changedHandler : PlayerCallback | null = null;
 
 export function setBusSession(bus : Gio.DBusConnection | null) {
@@ -52,6 +53,8 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
             "bing.net%2Fth%2Fid%2FOIP.kVjNx2oThEosDC-GPybDPQHaHa%3Fpid%3DApi&f=1&ipt=" +
             "c808b452cde05f49638bef772359332dd1aa2c16bfacb1bd03d2bc4efb6d723d&ipo=images",
         seconds: 207,
+        positionSeconds,
+        capturedAt: new Date(),
         status: isPlaying ? "Playing" : "Paused"
     };
 }
@@ -69,7 +72,11 @@ export async function mediaNext(name : string) : Promise<void> {
     return;
 }
 
+export async function mediaSeek(name : string, position : number) : Promise<void> {
+    positionSeconds = position;
+    changedHandler?.(name);
+}
+
 export function mediaFree() : void {
     return;
 }
-

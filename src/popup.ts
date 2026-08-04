@@ -17,6 +17,7 @@
 
 import Clutter from "gi://Clutter";
 import Gio from "gi://Gio";
+import GLib from "gi://GLib";
 import Meta from "gi://Meta";
 import St from "gi://St";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
@@ -65,6 +66,7 @@ interface PopupCtorArgs {
     mediaTogglePause : (name : string) => Promise<void>;
     mediaPrev : (name : string) => Promise<void>;
     mediaNext : (name : string) => Promise<void>;
+    mediaSeek : (name : string, positionSeconds : number) => Promise<void>;
 };
 
 interface UpdateGuiArgs {
@@ -77,6 +79,7 @@ export class Popup {
     #mediaTogglePause : (name : string) => void;
     #mediaPrev : (name : string) => void;
     #mediaNext : (name : string) => void;
+    #mediaSeek : (name : string, positionSeconds : number) => void;
 
     #wndBus : WndBus;
     #metadata : ExtensionMetadata;
@@ -94,6 +97,11 @@ export class Popup {
     #pauseIcon : St.Icon;
     #prevButton : St.Button;
     #nextButton : St.Button;
+    #progressBar : St.BoxLayout;
+    #progressFill : St.Widget;
+    #progressRemaining : St.Widget;
+    #progressInfo : PlayerInfo | null = null;
+    #progressTimer : number;
 
     #playerName : string | null = null;
     readonly #gSettings : Gio.Settings;
@@ -110,6 +118,7 @@ export class Popup {
         this.#wndBus = a.wndBus;
         this.#mediaPrev = a.mediaPrev;
         this.#mediaNext = a.mediaNext;
+        this.#mediaSeek = a.mediaSeek;
         this.#mediaTogglePause = a.mediaTogglePause;
         this.#metadata = a.metadata;
 
@@ -168,6 +177,31 @@ export class Popup {
         this.#prevButton = barWidgets.prevButton;
         this.#nextButton = barWidgets.nextButton;
 
+        const progressWidgets = Popup.createProgressBar();
+        this.#progressBar = progressWidgets.bar;
+        this.#progressFill = progressWidgets.progress;
+        this.#progressRemaining = progressWidgets.remaining;
+        this.#progressBar.connect("notify::allocation", () => this.#updateProgressBar());
+        this.#progressBar.connect("button-release-event", (_bar, event) => {
+            const name = this.#playerName;
+            const seconds = this.#progressInfo?.seconds;
+            if(!name || !seconds) return false;
+
+            const [ stageX, stageY ] = event.get_coords();
+            const [ transformed, localX ] = this.#progressBar.transform_stage_point(stageX, stageY);
+            const width = this.#progressBar.allocation.get_width();
+            if(!transformed || width <= 0) return false;
+
+            const fraction = Math.max(0, Math.min(1, localX / width));
+            this.#mediaSeek(name, fraction * seconds);
+            return true;
+        });
+        setPointer(this.#progressBar);
+        this.#progressTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 16, () => {
+            this.#updateProgressBar();
+            return GLib.SOURCE_CONTINUE;
+        });
+
         this.#prevButton.connect("clicked", () => {
             const name = this.#playerName;
             if(name) this.#mediaPrev(name);
@@ -187,6 +221,7 @@ export class Popup {
         box.add_child(this.#title);
         box.add_child(this.#artist);
         box.add_child(controlsBar);
+        box.add_child(this.#progressBar);
 
         this.#menuItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
         this.#menuItem.actor.add_child(box);
@@ -273,13 +308,62 @@ export class Popup {
         };
     }
 
+    private static createProgressBar() {
+        const progress = new St.Widget({
+            style_class: "dropbeat-progress-fill",
+            x_expand: false,
+            y_align: Clutter.ActorAlign.FILL
+        });
+        const remaining = new St.Widget({
+            x_expand: false
+        });
+        const bar = new St.BoxLayout({
+            style_class: "dropbeat-progress-bar",
+            vertical: false,
+            reactive: true,
+            track_hover: true,
+            x_expand: true,
+            y_expand: false
+        });
+
+        bar.add_child(progress);
+        bar.add_child(remaining);
+
+        return { bar, progress, remaining };
+    }
+
+    #updateProgressBar() : void {
+        const width = this.#progressBar.allocation.get_width();
+        const height = this.#progressBar.allocation.get_height();
+        if(width <= 0) return;
+
+        const info = this.#progressInfo;
+        let fraction = 0;
+        if(info?.positionSeconds !== null && info?.seconds) {
+            let position = info.positionSeconds;
+            if(info.status === "Playing") {
+                position += (Date.now() - info.capturedAt.getTime()) / 1000;
+            }
+            fraction = Math.max(0, Math.min(1, position / info.seconds));
+        }
+
+        const progressWidth = fraction > 0
+            ? Math.min(width, Math.max(height, width * fraction))
+            : 0;
+        this.#progressFill.set_width(progressWidth);
+        this.#progressRemaining.set_width(width - progressWidth);
+    }
+
     free() {
+        GLib.source_remove(this.#progressTimer);
         this.#menuItem.destroy();
         this.#menuItem = null!;
     }
 
     updateGui(name : string, p : PlayerInfo) : void {
         this.#playerName = name;
+        this.#progressInfo = p;
+        this.#updateProgressBar();
         this.#updateLabels(p);
         this.#updateWnd(false);
 
@@ -365,4 +449,3 @@ export class Popup {
     }
 
 }
-

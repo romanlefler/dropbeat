@@ -32,6 +32,23 @@
     margin-top: 0.25em;
 }
 
+.dropbeat-progress-bar {
+    height: 8px;
+    margin: 8px 28px 0px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.35);
+}
+
+.dropbeat-progress-bar:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.dropbeat-progress-fill {
+    height: 8px;
+    border-radius: 999px;
+    background-color: white;
+}
+
 .dropbeat-pause {
     margin: 0px 20px;
 }
@@ -43,4 +60,3 @@
 .dropbeat-control:hover {
     background-color: rgba(0, 0, 0, 0.4);
 }
-

@@ -23,7 +23,7 @@ import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { gettext as extensionGettext } from "resource:///org/gnome/shell/extensions/extension.js";
 import { setUpGettext } from "./gettext.js";
-import { setBusSession, mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPlayer, mediaTogglePause, mediaPrev, mediaNext } from "./mpris.js";
+import { setBusSession, mediaFree, mediaLaunched, getMediaPlayers, mediaQueryPlayer, mediaTogglePause, mediaPrev, mediaNext, mediaSeek } from "./mpris.js";
 import { Popup } from "./popup.js";
 import { setUpSoup, freeSoup, setSoupTimeout } from "./soup.js";
 import { keybindingSetup, keybindingCleanup } from "./keybinding.js";
@@ -160,7 +160,8 @@ export default class DropbeatExtension extends Extension {
                 gSettings: this.#gsettings,
                 mediaTogglePause,
                 mediaPrev,
-                mediaNext
+                mediaNext,
+                mediaSeek
             });
         } else this.#popup = undefined;
 

@@ -50,11 +50,11 @@ make install
 - Works with any MPRIS player such as Firefox, Spotify, VLC, etc.
 - Click the Album Art to open a fullscreen pop-up
 - Configurable global shortcut to toggle open the card
+- Enable the progress bar to show progress and seek to position
 
 ## Current Limitations
 
 - No shuffle, loop, or volume controls
-- No seeking controls or progress bar
 - Always only shows last active player in the case of multiple players
 
 ## Building

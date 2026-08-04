@@ -132,6 +132,30 @@ function mediaChanged(proxy : Gio.DBusProxy, callback : () => void) : void {
         const changed : string[] = props.deep_unpack();
         if("Metadata" in changed || "PlaybackStatus" in changed) callback();
     });
+    proxy.connect("g-signal", (_proxy, _sender, signal) => {
+        if(signal === "Seeked") callback();
+    });
+}
+
+function queryPosition(proxy : Gio.DBusProxy) : number | null {
+    let positionV = proxy.get_cached_property("Position");
+    try {
+        const result = proxy.get_connection().call_sync(
+            proxy.get_name(),
+            proxy.get_object_path(),
+            "org.freedesktop.DBus.Properties",
+            "Get",
+            new GLib.Variant("(ss)", [ "org.mpris.MediaPlayer2.Player", "Position" ]),
+            new GLib.VariantType("(v)"),
+            Gio.DBusCallFlags.NONE,
+            1000,
+            null
+        );
+        positionV = result.get_child_value(0).get_variant();
+    } catch(e) {
+        console.warn(`Dropbeat: Failed to query current media position: ${e}`);
+    }
+    return i64(positionV);
 }
 
 export interface PlayerInfo {
@@ -144,6 +168,8 @@ export interface PlayerInfo {
     release : Date | null;
     artUrl : string | null;
     seconds : number | null;
+    positionSeconds : number | null;
+    capturedAt : Date;
     status : "Playing" | "Paused" | "Stopped" | null;
 }
 
@@ -173,6 +199,8 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
 
         const date = str(meta["xesam:contentCreated"]);
         const sec = i64(meta["mpris:length"]);
+        const position = queryPosition(proxy);
+        const capturedAt = new Date();
         return {
             title: str(meta["xesam:title"]),
             artists: meta["xesam:artist"]?.deep_unpack() ?? null,
@@ -183,6 +211,8 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
             release: date ? new Date(date) : null,
             artUrl: str(meta["mpris:artUrl"]),
             seconds: sec ? sec / 1000000 : null,
+            positionSeconds: position !== null ? position / 1000000 : null,
+            capturedAt,
             status: status
         };
         
@@ -192,13 +222,15 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
     }
 }
 
-async function mediaCallMethod(name : string, method : string) : Promise<void> {
+async function mediaCallMethod(
+    name : string, method : string, parameters : GLib.Variant | null = null
+) : Promise<void> {
     const proxy = proxies[name];
     if(!proxy) throw new Error(`No proxy for media player ${name}.`);
     return new Promise<void>((resolve, reject) => {
         proxy.call(
             method,
-            null,
+            parameters,
             Gio.DBusCallFlags.NONE,
             -1,
             null,
@@ -211,7 +243,7 @@ async function mediaCallMethod(name : string, method : string) : Promise<void> {
                 }
                 catch(e)
                 {
-                    return reject(new Error(`Toggle pause failed on player ${name}: ${e}`));
+                    return reject(new Error(`${method} failed on player ${name}: ${e}`));
                 }
                 resolve();
             }
@@ -231,6 +263,18 @@ export async function mediaNext(name : string) : Promise<void> {
     return mediaCallMethod(name, "Next");
 }
 
+export async function mediaSeek(name : string, positionSeconds : number) : Promise<void> {
+    const proxy = proxies[name];
+    if(!proxy) throw new Error(`No proxy for media player ${name}.`);
+
+    const currentPosition = queryPosition(proxy);
+    if(currentPosition === null) throw new Error(`No position for media player ${name}.`);
+
+    const target = Math.max(0, positionSeconds * 1000000);
+    const offset = Math.round(target - currentPosition);
+    return mediaCallMethod(name, "Seek", new GLib.Variant("(x)", [ offset ]));
+}
+
 export function mediaFree() : void {
     let id : number | undefined;
     if(bus) {
@@ -241,4 +285,3 @@ export function mediaFree() : void {
     subs = [ ];
     bus = null;
 }
-
