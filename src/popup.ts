@@ -87,6 +87,8 @@ export class Popup {
 
     #menuItem : PopupMenu.PopupBaseMenuItem;
     #menuBox : St.BoxLayout;
+    #menu : PopupMenu.PopupMenu;
+    #menuOpenHandler : number;
 
     #coverBin : St.Widget;
     #coverImg : St.Widget;
@@ -101,7 +103,7 @@ export class Popup {
     #progressFill : St.Widget;
     #progressRemaining : St.Widget;
     #progressInfo : PlayerInfo | null = null;
-    #progressTimer : number;
+    #progressTimer : number | null = null;
 
     #playerName : string | null = null;
     readonly #gSettings : Gio.Settings;
@@ -121,6 +123,7 @@ export class Popup {
         this.#mediaSeek = a.mediaSeek;
         this.#mediaTogglePause = a.mediaTogglePause;
         this.#metadata = a.metadata;
+        this.#menu = a.menu;
 
         const { w: screenW, h: screenH } = getScreenSize();
         const szMin = Math.min(screenW, screenH);
@@ -197,10 +200,12 @@ export class Popup {
             return true;
         });
         setPointer(this.#progressBar);
-        this.#progressTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 16, () => {
-            this.#updateProgressBar();
-            return GLib.SOURCE_CONTINUE;
+        // @ts-ignore
+        this.#menuOpenHandler = this.#menu.connect("open-state-changed", (_menu, isOpen) => {
+            if(isOpen) this.#startProgressTimer();
+            else this.#stopProgressTimer();
         });
+        if(this.#menu.isOpen) this.#startProgressTimer();
 
         this.#prevButton.connect("clicked", () => {
             const name = this.#playerName;
@@ -354,8 +359,24 @@ export class Popup {
         this.#progressRemaining.set_width(width - progressWidth);
     }
 
-    free() {
+    #startProgressTimer() : void {
+        if(this.#progressTimer !== null) return;
+        this.#updateProgressBar();
+        this.#progressTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 16, () => {
+            this.#updateProgressBar();
+            return GLib.SOURCE_CONTINUE;
+        });
+    }
+
+    #stopProgressTimer() : void {
+        if(this.#progressTimer === null) return;
         GLib.source_remove(this.#progressTimer);
+        this.#progressTimer = null;
+    }
+
+    free() {
+        this.#stopProgressTimer();
+        this.#menu.disconnect(this.#menuOpenHandler);
         this.#menuItem.destroy();
         this.#menuItem = null!;
     }
