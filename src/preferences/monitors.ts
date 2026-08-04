@@ -92,7 +92,9 @@ function getMonitorFriendlyName(m : Gdk.Monitor) : string {
 }
 
 export function listMonitors() : MonitorOption[] {
-    const options : MonitorOption[] = [];
+    const options : MonitorOption[] = [ ];
+    const modelStrs : Record<string, boolean> = { };
+
     const display = Gdk.Display.get_default();
     if(!display) return options;
 
@@ -101,14 +103,25 @@ export function listMonitors() : MonitorOption[] {
         const monitor = monitors.get_item(i) as Gdk.Monitor | null;
         if(!monitor) continue;
 
+        const manufacturer = monitor.get_manufacturer() ?? "";
+        const model = monitor.get_model() ?? "";
+        const widthmm = monitor.get_width_mm();
+        const heightmm = monitor.get_height_mm();
+        const connector = monitor.get_connector() ?? "";
+
+        const modelStr = `${manufacturer}-${model}-${widthmm}-${heightmm}`;
+        // If there was a duplicate monitor, just display the connector
+        let label : string;
+        if(modelStrs[modelStr]) label = connector;
+        else {
+            label = getMonitorFriendlyName(monitor);
+            modelStrs[modelStr] = true;
+        }
+
         options.push({
-            label: getMonitorFriendlyName(monitor),
+            label,
             fingerprint: {
-                manufacturer: monitor.get_manufacturer() ?? "",
-                model: monitor.get_model() ?? "",
-                widthmm: monitor.get_width_mm(),
-                heightmm: monitor.get_height_mm(),
-                connector: monitor.get_connector() ?? ""
+                manufacturer, model, widthmm, heightmm, connector
             }
         });
     }
