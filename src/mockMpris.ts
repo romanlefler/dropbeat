@@ -77,6 +77,10 @@ export async function mediaSeek(name : string, position : number) : Promise<void
     changedHandler?.(name);
 }
 
+export async function mediaRaise(name : string) : Promise<void> {
+    return;
+}
+
 export function mediaFree() : void {
     return;
 }

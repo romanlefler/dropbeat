@@ -67,6 +67,7 @@ interface PopupCtorArgs {
     mediaPrev : (name : string) => Promise<void>;
     mediaNext : (name : string) => Promise<void>;
     mediaSeek : (name : string, positionSeconds : number) => Promise<void>;
+    mediaRaise : (name : string) => Promise<void>;
 };
 
 interface UpdateGuiArgs {
@@ -80,6 +81,7 @@ export class Popup {
     #mediaPrev : (name : string) => void;
     #mediaNext : (name : string) => void;
     #mediaSeek : (name : string, positionSeconds : number) => void;
+    #mediaRaise : (name : string) => void;
 
     #wndBus : WndBus;
     #metadata : ExtensionMetadata;
@@ -92,7 +94,7 @@ export class Popup {
 
     #coverBin : St.Widget;
     #coverImg : St.Widget;
-    #title : St.Label;
+    #title : St.Button;
     #artist : St.Label;
 
     #pauseButton : St.Button;
@@ -121,6 +123,7 @@ export class Popup {
         this.#mediaPrev = a.mediaPrev;
         this.#mediaNext = a.mediaNext;
         this.#mediaSeek = a.mediaSeek;
+        this.#mediaRaise = a.mediaRaise;
         this.#mediaTogglePause = a.mediaTogglePause;
         this.#metadata = a.metadata;
         this.#menu = a.menu;
@@ -164,9 +167,21 @@ export class Popup {
             }, this.#gSettings.get_string("fullscreen-monitor"));
         });
 
-        this.#title = new St.Label({
+        this.#title = new St.Button({
             style_class: "dropbeat-title",
-            text: _g("No Title")
+            label: _g("No Title"),
+            reactive: true,
+            can_focus: true,
+            track_hover: true,
+            x_align: Clutter.ActorAlign.CENTER
+        });
+        setPointer(this.#title);
+        this.#title.connect("clicked", () => {
+            const name = this.#playerName;
+            if(name) {
+                this.#menu.close(true);
+                this.#mediaRaise(name);
+            }
         });
         this.#artist = new St.Label({
             style_class: "dropbeat-artist",
@@ -425,7 +440,7 @@ export class Popup {
     }
 
     #updateLabels(p : PlayerInfo) : void {
-        this.#title.text = this.#titleText = p.title || _g("No Title");
+        this.#title.label = this.#titleText = p.title || _g("No Title");
         this.#artist.text = this.#artistsText = p.artists?.join(_g(" / ")) || _g("No Artist");
         this.#albumText = p.album || "";
 

@@ -275,6 +275,32 @@ export async function mediaSeek(name : string, positionSeconds : number) : Promi
     return mediaCallMethod(name, "Seek", new GLib.Variant("(x)", [ offset ]));
 }
 
+export async function mediaRaise(name : string) : Promise<void> {
+    if(!bus) throw new Error("Set bus session first.");
+    return new Promise<void>((resolve, reject) => {
+        bus!.call(
+            name,
+            "/org/mpris/MediaPlayer2",
+            "org.mpris.MediaPlayer2",
+            "Raise",
+            null,
+            null,
+            Gio.DBusCallFlags.NONE,
+            -1,
+            null,
+            (connection, result) => {
+                if(!connection) return reject(new Error(`Raise failed on player ${name}: no connection.`));
+                try {
+                    connection.call_finish(result);
+                    resolve();
+                } catch(e) {
+                    reject(new Error(`Raise failed on player ${name}: ${e}`));
+                }
+            }
+        );
+    });
+}
+
 export function mediaFree() : void {
     let id : number | undefined;
     if(bus) {
