@@ -297,7 +297,7 @@ export async function mediaSeek(name : string, positionSeconds : number) : Promi
     if(!proxy) throw new Error(`No proxy for media player ${name}.`);
 
     const metadata = proxy.get_cached_property("Metadata");
-    const trackIdV = metadata?.lookup_value("mpris:trackid", null)?.get_variant();
+    const trackIdV = metadata?.lookup_value("mpris:trackid", null);
     const trackId = str(trackIdV);
     if(!trackId) throw new Error(`No track ID for media player ${name}.`);
 
