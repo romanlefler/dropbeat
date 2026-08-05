@@ -138,7 +138,8 @@ export async function checkMagick() : Promise<boolean> {
 }
 
 export async function ensureMagick(settings : Gio.Settings) : Promise<boolean> {
-    if(settings.get_boolean("has-magick")) return true;
+    // Disabling the setting check now; just check every time
+    // // if(settings.get_boolean("has-magick")) return true;
 
     const hasMagick = await checkMagick();
     if(!hasMagick) {
