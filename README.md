@@ -12,6 +12,8 @@ You can also click the album art to get a fullscreen display window.
 
 Screenshot uses art from [Magnific](https://www.magnific.com/free-vector/gradient-album-cover-template_49659001.htm).
 
+GNOME 51 unstable is now supported in the development copy.
+
 ## Requires
 
 ImageMagick (available in pretty much all distros' official repos)
@@ -44,9 +46,8 @@ make install
 
 ## Features
 
-- Control your media player from the top bar
 - View album art, track title, and artist name
-- Play, pause, and skip tracks
+- Play, pause, skip, and seek with the animated progress bar (UNRELEASED)
 - Works with any MPRIS player such as Firefox, Spotify, VLC, etc.
 - Click the Album Art to open a fullscreen pop-up
 - Configurable global shortcut to toggle open the card
@@ -56,6 +57,7 @@ make install
 
 - No shuffle, loop, or volume controls
 - Always only shows last active player in the case of multiple players
+- Very configurable, check [Settings](./docs/settings.md) for a list of settings
 
 ## Building
 
