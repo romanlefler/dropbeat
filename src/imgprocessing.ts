@@ -31,15 +31,65 @@ export class BannedImageFormatError extends Error {
     }
 }
 
-async function getDir() : Promise<string> {
-    const dir = Gio.File.new_for_path("/tmp/dropbeat");
-    return new Promise<string>((resolve, reject) => {
-        dir.make_directory_async(GLib.PRIORITY_DEFAULT, null, () => {
-            const path = dir.get_path();
-            if(path) resolve(path);
-            else reject("Couldn't create temp directory.");
+let tempDir : string | null = null;
+
+export async function cleanTempDir() : Promise<void> {
+    if(!tempDir) return;
+
+    const dir = Gio.File.new_for_path(tempDir);
+    tempDir = null;
+
+    const enumerator = dir.enumerate_children(
+        Gio.FILE_ATTRIBUTE_STANDARD_NAME,
+        Gio.FileQueryInfoFlags.NONE,
+        null
+    );
+    let info : Gio.FileInfo | null;
+    while((info = enumerator.next_file(null)) !== null) {
+        const name = info.get_name();
+        const child = dir.get_child(name);
+        if(!child.get_path()!.includes("dropbeat")) {
+            throw new Error(`Emergency fail-safe. Trying to delete file ${child.get_path()}`);
+        }
+        await deleteFile(child);
+    }
+    enumerator.close(null);
+
+    await deleteFile(dir);
+}
+
+export async function setupTempDir() : Promise<void> {
+    await cleanTempDir();
+    return new Promise<void>((resolve, reject) => {
+        Gio.File.new_tmp_dir_async("dropbeat-XXXXXX", GLib.PRIORITY_DEFAULT, null, (_, res) => {
+            try {
+                const path = Gio.File.new_tmp_dir_finish(res).get_path();
+                if(!path) throw new Error("Failed to get temp dir path.");
+                tempDir = path;
+                resolve();
+            } catch(e) {
+                reject(e);
+            }
         });
     });
+}
+
+function deleteFile(file : Gio.File) : Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        file.delete_async(GLib.PRIORITY_DEFAULT, null, (_, res) => {
+            try {
+                if(file.delete_finish(res)) resolve();
+                else reject(new Error(`Failed to delete ${file.get_path()}.`));
+            } catch(e) {
+                reject(e);
+            }
+        });
+    });
+}
+
+async function getDir() : Promise<string> {
+    if(!tempDir) throw new Error("Temp dir not initialized.");
+    return tempDir;
 }
 
 async function cp(source : Gio.File, dest : Gio.File) : Promise<void> {
@@ -73,7 +123,7 @@ async function mv(source : Gio.File, dest : Gio.File) : Promise<void> {
             null,
             (_source, result) => {
                 try {
-                    const ok = source.copy_finish(result);
+                    const ok = source.move_finish(result);
                     if(ok) resolve();
                     else reject(`Couldn't move ${source.get_path()} to ${dest.get_path()}.`);
                 } catch (e) {
@@ -263,7 +313,6 @@ async function prepareStdCover(inFile : Gio.File) : Promise<Gio.File> {
 export async function getStandardCover(uri : string, fetchHttp : boolean, isHttpsOnly : boolean) : Promise<string> {
     try {
         const dir = await getDir();
-        const file = Gio.File.new_for_path(`${dir}/standard`);
         if(uri.startsWith("http://") || uri.startsWith("https://")) {
 
             if(!fetchHttp) throw new Error("HTTP/HTTPS fetching not allowed.");
@@ -273,7 +322,6 @@ export async function getStandardCover(uri : string, fetchHttp : boolean, isHttp
 
             await write(tmpFile, data);
             const mvFrom = await prepareStdCover(tmpFile);
-            await mv(mvFrom, file);
             return mvFrom.get_path()!;
 
         } else if(uri.startsWith("file://")) {
@@ -323,11 +371,6 @@ export async function getBlurredCover(originalPath : string) : Promise<string> {
     else throw new Error(`Failed to create blurred cover.`);
 }
 
-export function clearTempFiles() : void {
-    const file = Gio.File.new_for_path("/tmp/dropbeat");
-    file.delete(null);
-}
-
 /**
  * Moves temp image files to the standard locations.
  */
@@ -340,4 +383,3 @@ export async function mvToLocation(std : string, blurred : string) : Promise<[ s
     await mvString(blurred, BLURRED);
     return [ COVER, BLURRED ];
 }
-

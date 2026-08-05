@@ -85,6 +85,8 @@ export class Popup {
     #wndBus : WndBus;
     #metadata : ExtensionMetadata;
     #coverUri : string | null = null;
+    #stdCoverPath : string = "";
+    #blurCoverPath : string = "";
 
     #menuItem : PopupMenu.PopupBaseMenuItem;
     #menuBox : St.BoxLayout;
@@ -168,7 +170,9 @@ export class Popup {
                 albumArtChanged: true
             }, {
                 monitor: this.#gSettings.get_string("fullscreen-monitor"),
-                hideCursor: this.#gSettings.get_boolean("hide-cursor")
+                hideCursor: this.#gSettings.get_boolean("hide-cursor"),
+                stdcover: this.#stdCoverPath,
+                blurcover: this.#blurCoverPath
             });
         });
 
@@ -480,6 +484,8 @@ export class Popup {
             
             // This line updates the actual files so that they're both done at once
             const [imgArt, imgBlurred ] = await mvToLocation(art, blurred);
+            this.#stdCoverPath = imgArt;
+            this.#blurCoverPath = imgBlurred;
 
             this.#coverImg.style = `background-image: url('${imgArt}');`;
             this.#menuBox.style = `background-image: url('${imgBlurred}');`;

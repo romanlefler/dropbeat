@@ -100,6 +100,8 @@ interface MonitorFingerprint {
 interface WndSettings {
     monitor : string;
     hideCursor : boolean;
+    stdcover : string;
+    blurcover : string;
 }
 
 function parseSettings(settingsJson : string) : WndSettings {
@@ -107,11 +109,13 @@ function parseSettings(settingsJson : string) : WndSettings {
         const parsed = JSON.parse(settingsJson) as Partial<WndSettings>;
         return {
             monitor: typeof parsed.monitor === "string" ? parsed.monitor : "",
-            hideCursor: parsed.hideCursor === true
+            hideCursor: parsed.hideCursor === true,
+            stdcover: typeof parsed.stdcover === "string" ? parsed.stdcover : "",
+            blurcover: typeof parsed.blurcover === "string" ? parsed.blurcover : ""
         };
     } catch(e) {
         console.warn(`Invalid window settings: ${e}`);
-        return { monitor: "", hideCursor: false };
+        return { monitor: "", hideCursor: false, stdcover: "", blurcover: "" };
     }
 }
 
@@ -171,7 +175,7 @@ function main(argv: string[]) {
         attachHandlers(app, wnd);
 
         const design = new Design(a.title, a.artists);
-        const uiMan = new UiMan(design, wnd);
+        const uiMan = new UiMan(design, wnd, settings.stdcover, settings.blurcover);
         uiMan.createWidgets();
 
         beginReadCmdline(design, uiMan);

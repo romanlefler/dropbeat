@@ -30,6 +30,8 @@ export interface UpdateWndArgs {
 export interface CreateWndArgs {
     monitor: string;
     hideCursor: boolean;
+    stdcover: string;
+    blurcover: string;
 }
 
 export class WndBus {

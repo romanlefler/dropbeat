@@ -29,6 +29,7 @@ import { setUpSoup, freeSoup, setSoupTimeout } from "./soup.js";
 import { keybindingSetup, keybindingCleanup } from "./keybinding.js";
 import { WndBus } from "./wndbus.js";
 import { ensureMagick } from "./prereqs.js";
+import { cleanTempDir, setupTempDir } from "./imgprocessing.js";
 
 export default class DropbeatExtension extends Extension {
 
@@ -89,6 +90,7 @@ export default class DropbeatExtension extends Extension {
     }
 
     async #enableAsync() : Promise<void> {
+        await setupTempDir();
         const hasMagick = await ensureMagick(this.#gsettings);
         if(!hasMagick) {
             console.error("Dropbeat: ImageMagick not found; disabling.");
@@ -129,7 +131,7 @@ export default class DropbeatExtension extends Extension {
     /**
      * Called by GNOME Extensions when this extension is disabled.
      */
-    disable() : void {
+    async disable() : Promise<void> {
         this.#mediaChangeSerial++;
         if(this.#timeoutSettingsHandler !== undefined) {
             this.#gsettings.disconnect(this.#timeoutSettingsHandler);
@@ -156,6 +158,8 @@ export default class DropbeatExtension extends Extension {
         // }
 
         this.#gsettings = undefined!;
+
+        await cleanTempDir();
     }
 
     #createIndicator() : void {

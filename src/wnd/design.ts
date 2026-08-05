@@ -26,9 +26,6 @@ import Gdk from "gi://Gdk";
 import Gtk from "gi://Gtk";
 import * as Utils from "./utils.js";
 
-const COVER = "/tmp/dropbeat/standard";
-const BLURRED = "/tmp/dropbeat/blurred";
-
 export class Design {
     #title : string;
     #artist : string;
@@ -66,16 +63,20 @@ export class UiMan {
 
     #design : Design;
     #wnd : Gtk.ApplicationWindow;
-    constructor(design : Design, wnd : Gtk.ApplicationWindow) {
+    #stdCover : string;
+    #blurCover : string;
+    constructor(design : Design, wnd : Gtk.ApplicationWindow, stdCover : string, blurCover : string) {
         this.#design = design;
         this.#wnd = wnd;
+        this.#stdCover = stdCover;
+        this.#blurCover = blurCover;
     }
 
     createWidgets() : void {
         this.#overlay = new Gtk.Overlay();
         this.#bgImg = new Gtk.Picture({
             content_fit: Gtk.ContentFit.COVER,
-            file: Gio.File.new_for_path(BLURRED)
+            file: Gio.File.new_for_path(this.#blurCover)
         });
 
         this.#overlay.set_child(this.#bgImg);
@@ -109,7 +110,7 @@ export class UiMan {
 
         const cover = new Gtk.Picture({
             content_fit: Gtk.ContentFit.COVER,
-            file: Gio.File.new_for_path(COVER)
+            file: Gio.File.new_for_path(this.#stdCover)
         });
         coverClip.append(cover);
 
@@ -144,8 +145,7 @@ export class UiMan {
 
         this.#titleLbl?.set_label(this.#design.getTitle());
         this.#artistLbl?.set_label(this.#design.getArtist());
-        this.#cover?.set_file(Gio.File.new_for_path(COVER));
-        this.#bgImg?.set_file(Gio.File.new_for_path(BLURRED));
+        this.#cover?.set_file(Gio.File.new_for_path(this.#stdCover));
+        this.#bgImg?.set_file(Gio.File.new_for_path(this.#blurCover));
     }
 }
-
