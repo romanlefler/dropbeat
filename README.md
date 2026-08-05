@@ -64,7 +64,7 @@ Build to `dist/build`:
 make
 ```
 
-Launch test GNOME shell instance:
+Launch test GNOME shell instance (make sure mutter devkit is installed):
 
 ```shell
 ./debug.sh
@@ -81,4 +81,21 @@ Create ZIP file:
 ```shell
 make pack
 ```
+
+## Contributing
+
+Everyone is welcome to contribute via pull requests.
+
+### Translating
+
+Translations are welcome. Read [Translating](./docs/translating.md) for more details.
+
+### Code
+
+Everyone is welcome to contribute code. A few things to keep in mind: 
+
+- If you're going to add features or anything like that it is recommended to make an issue first.
+- Please test your contribution using `./debug.sh` before opening a pull request (make sure you have mutter devkit installed).
+- Do not put translation changes AND code changes in the same pull request. You can always make multiple.
+- Please keep your pull request to one general topic; do not make a bunch of unrelated changes in the same pull request. You can always open multiple.
 
