@@ -2,13 +2,13 @@
 
 Dropbeat is a GNOME shell extension that shows a cool card to control your media player. Supports GNOME 48, 49, and 50.
 
-![Screenshot](./docs/screenshot.png)
+![Screenshot](./docs/assets/screenshot.png)
 
 Screenshot uses art from [Magnific](https://www.magnific.com/free-vector/gradient-album-cover-template_49658978.htm).
 
 You can also click the album art to get a fullscreen display window.
 
-![Fullscreen Screenshot](./docs/fullscreen.png)
+![Fullscreen Screenshot](./docs/assets/fullscreen.png)
 
 Screenshot uses art from [Magnific](https://www.magnific.com/free-vector/gradient-album-cover-template_49659001.htm).
 
@@ -24,7 +24,7 @@ Recommended method, although updates are sometimes delayed.
 You still need to make sure your system has ImageMagick installed yourself.
 The extension explains how to do this on most distros.
 
-[![Get on GNOME Extensions](./docs/ego.png)](https://extensions.gnome.org/extension/9019/dropbeat/)
+[![Get on GNOME Extensions](./docs/assets/ego.png)](https://extensions.gnome.org/extension/9019/dropbeat/)
 
 ### Manual Installation
 
