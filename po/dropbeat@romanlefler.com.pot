@@ -1,0 +1,252 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Roman Lefler
+# This file is distributed under the same license as the dropbeat@romanlefler.com package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: dropbeat@romanlefler.com 51.DEV\n"
+"Report-Msgid-Bugs-To: romanlefler at proton dot me\n"
+"POT-Creation-Date: 2026-08-04 22:33-0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/popup.ts:181 src/popup.ts:452 src/wndbus.ts:100 src/wndbus.ts:139
+msgid "No Title"
+msgstr ""
+
+#: src/popup.ts:197 src/popup.ts:453 src/wndbus.ts:102 src/wndbus.ts:141
+msgid "No Artist"
+msgstr ""
+
+#: src/popup.ts:453
+msgid " / "
+msgstr ""
+
+#: src/preferences/aboutPage.ts:46
+msgid "About"
+msgstr ""
+
+#: src/preferences/aboutPage.ts:57
+msgid "GitHub Repository"
+msgstr ""
+
+#: src/preferences/aboutPage.ts:59
+msgid "Support Me"
+msgstr ""
+
+#: src/preferences/aboutPage.ts:66
+msgid "Dropbeat Version"
+msgstr ""
+
+#: src/preferences/aboutPage.ts:69
+msgid "Unknown"
+msgstr ""
+
+#: src/preferences/aboutPage.ts:74
+msgid "Settings"
+msgstr ""
+
+#: src/preferences/aboutPage.ts:77
+msgid "Copy"
+msgstr ""
+
+#: src/preferences/aboutPage.ts:98
+msgid "Copied settings JSON to clipboard."
+msgstr ""
+
+#: src/preferences/aboutPage.ts:112
+#, javascript-format
+msgid "Contributions and translations are welcome! Read how on %s."
+msgstr ""
+
+#: src/preferences/aboutPage.ts:115
+#, javascript-format
+msgid "If you like this extension, consider starring it on %s."
+msgstr ""
+
+#: src/preferences/aboutPage.ts:118
+msgid "here"
+msgstr ""
+
+#: src/preferences/aboutPage.ts:120
+#, javascript-format
+msgid "Report bugs or request new features %s."
+msgstr ""
+
+#: src/preferences/aboutPage.ts:129
+#, javascript-format
+msgid "Dropbeat is licensed under the %s license."
+msgstr ""
+
+#: src/preferences/aboutPage.ts:131
+msgid "GPLv3 license"
+msgstr ""
+
+#: src/preferences/aboutPage.ts:139
+#, javascript-format
+msgid "The \"missing cover art\" vinyl icon is from %s."
+msgstr ""
+
+#: src/preferences/aboutPage.ts:140
+msgid "pngimg.com"
+msgstr ""
+
+#: src/preferences/aboutPage.ts:142
+#, javascript-format
+msgid "License: %s. No modifications made."
+msgstr ""
+
+#: src/preferences/aboutPage.ts:143
+msgid "PNGIMG License"
+msgstr ""
+
+#: src/preferences/generalPage.ts:53
+msgid "General"
+msgstr ""
+
+#: src/preferences/generalPage.ts:58
+msgid "Popup"
+msgstr ""
+
+#: src/preferences/generalPage.ts:59
+msgid "Configure the popup card"
+msgstr ""
+
+#: src/preferences/generalPage.ts:62
+msgid "Progress Bar"
+msgstr ""
+
+#: src/preferences/generalPage.ts:63
+msgid "Show playback progress in the popup card"
+msgstr ""
+
+#: src/preferences/generalPage.ts:73
+msgid "Fullscreen"
+msgstr ""
+
+#: src/preferences/generalPage.ts:74
+msgid "Configure the fullscreen window"
+msgstr ""
+
+#: src/preferences/generalPage.ts:77
+msgid "Auto"
+msgstr ""
+
+#: src/preferences/generalPage.ts:103
+msgid "Monitor"
+msgstr ""
+
+#: src/preferences/generalPage.ts:116
+msgid "Hide Cursor"
+msgstr ""
+
+#: src/preferences/generalPage.ts:126
+msgid "Behavior"
+msgstr ""
+
+#: src/preferences/generalPage.ts:129
+msgid "Hide Browsers"
+msgstr ""
+
+#: src/preferences/generalPage.ts:130
+#, javascript-format
+msgid "Don't show web browsers like %s, %s, etc."
+msgstr ""
+
+#: src/preferences/generalPage.ts:140
+msgid "Keybindings"
+msgstr ""
+
+#: src/preferences/generalPage.ts:141
+msgid "Configure keyboard shortcuts"
+msgstr ""
+
+#: src/preferences/generalPage.ts:144
+msgid "Desktop Shortcut"
+msgstr ""
+
+#: src/preferences/generalPage.ts:145
+msgid "Desktop keyboard shortcut to open/close the card"
+msgstr ""
+
+#: src/preferences/generalPage.ts:156
+msgid "Include Super Key?"
+msgstr ""
+
+#: src/preferences/generalPage.ts:157
+msgid "Insert Super key into above shortcut"
+msgstr ""
+
+#: src/preferences/generalPage.ts:169
+msgid "Internet"
+msgstr ""
+
+#: src/preferences/generalPage.ts:170
+msgid "Configure Internet permissions"
+msgstr ""
+
+#: src/preferences/generalPage.ts:173
+msgid "Fetch Album Covers"
+msgstr ""
+
+#: src/preferences/generalPage.ts:174
+msgid "Allow fetching album covers over HTTP/HTTPS"
+msgstr ""
+
+#: src/preferences/generalPage.ts:179
+msgid "HTTPS Only"
+msgstr ""
+
+#: src/preferences/generalPage.ts:180
+msgid "Block album cover connections over plain HTTP"
+msgstr ""
+
+#: src/preferences/generalPage.ts:189
+msgid "Request Timeout"
+msgstr ""
+
+#: src/preferences/generalPage.ts:190
+msgid "Album cover request timeout in seconds"
+msgstr ""
+
+#: src/preferences/monitors.ts:81
+msgid "Unknown Display"
+msgstr ""
+
+#: src/preferences/shortcutrow.ts:68
+msgid "Capturing..."
+msgstr ""
+
+#: src/preferences/shortcutrow.ts:78
+msgid "Unset"
+msgstr ""
+
+#: src/prereqs.ts:51
+#, javascript-format
+msgid "Welcome to %s"
+msgstr ""
+
+#: src/prereqs.ts:72
+#, javascript-format
+msgid ""
+"This extension requires %s, a popular tool to process images.\n"
+"\n"
+"Please install ImageMagick and restart the extension.\n"
+"  •  %s\n"
+"  •  %s\n"
+"  •  %s\n"
+"  •  %s\n"
+"\n"
+msgstr ""
+
+#: src/prereqs.ts:91
+#, javascript-format
+msgid "Thank you for installing %s!"
+msgstr ""

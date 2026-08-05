@@ -14,6 +14,16 @@ Screenshot uses art from [Magnific](https://www.magnific.com/free-vector/gradien
 
 GNOME 51 unstable is now supported in the development copy.
 
+## Features
+
+- View album art, track title, and artist name
+- Play, pause, skip, and seek with the animated progress bar (UNRELEASED)
+- Works with any MPRIS player such as Firefox, Spotify, VLC, etc.
+- Click the Album Art to open a fullscreen pop-up
+- Configurable global shortcut to toggle open the card
+- Enable the progress bar to show progress and seek to position
+- Very configurable, check [Settings](./docs/settings.md) for a list of settings
+
 ## Requires
 
 ImageMagick (available in pretty much all distros' official repos)
@@ -43,21 +53,6 @@ git switch stable
 
 make install
 ```
-
-## Features
-
-- View album art, track title, and artist name
-- Play, pause, skip, and seek with the animated progress bar (UNRELEASED)
-- Works with any MPRIS player such as Firefox, Spotify, VLC, etc.
-- Click the Album Art to open a fullscreen pop-up
-- Configurable global shortcut to toggle open the card
-- Enable the progress bar to show progress and seek to position
-
-## Current Limitations
-
-- No shuffle, loop, or volume controls
-- Always only shows last active player in the case of multiple players
-- Very configurable, check [Settings](./docs/settings.md) for a list of settings
 
 ## Building
 
