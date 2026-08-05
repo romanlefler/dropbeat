@@ -70,7 +70,7 @@ make
 Launch test GNOME shell instance:
 
 ```shell
-./nest-test
+./debug.sh
 ```
 
 Install via Makefile:
