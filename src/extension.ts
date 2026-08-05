@@ -38,6 +38,7 @@ export default class DropbeatExtension extends Extension {
     #panelIcon? : St.Icon;
     #wndBus? : WndBus;
     #currentPlayer : string | null = null;
+    #mediaChangeSerial : number = 0;
 
     #settingsHandler : number | undefined;
     #timeoutSettingsHandler : number | undefined;
@@ -129,6 +130,7 @@ export default class DropbeatExtension extends Extension {
      * Called by GNOME Extensions when this extension is disabled.
      */
     disable() : void {
+        this.#mediaChangeSerial++;
         if(this.#timeoutSettingsHandler !== undefined) {
             this.#gsettings.disconnect(this.#timeoutSettingsHandler);
             this.#timeoutSettingsHandler = undefined;
@@ -204,9 +206,11 @@ export default class DropbeatExtension extends Extension {
         this.#indicator = undefined;
     }
 
-    #mediaChanged(name : string) : void {
+    async #mediaChanged(name : string) : Promise<void> {
         if(this.#isPlayerHidden(name)) return;
-        const info = mediaQueryPlayer(name);
+        const serial = ++this.#mediaChangeSerial;
+        const info = await mediaQueryPlayer(name);
+        if(serial !== this.#mediaChangeSerial || this.#isPlayerHidden(name)) return;
 
         if(!info) {
             if(name === this.#currentPlayer) {

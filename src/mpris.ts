@@ -156,27 +156,15 @@ function mediaChanged(proxy : Gio.DBusProxy, callback : () => void) : void {
     });
 }
 
-function queryProperty(
-    proxy : Gio.DBusProxy, interfaceName : string, propertyName : string
-) : GLib.Variant | null {
-    const result = proxy.get_connection().call_sync(
-        proxy.get_name(),
-        proxy.get_object_path(),
-        "org.freedesktop.DBus.Properties",
-        "Get",
-        new GLib.Variant("(ss)", [ interfaceName, propertyName ]),
-        new GLib.VariantType("(v)"),
-        Gio.DBusCallFlags.NONE,
-        1000,
-        null
-    );
-    return result.get_child_value(0).get_variant();
-}
-
-function queryPosition(proxy : Gio.DBusProxy) : number | null {
+async function queryPosition(name : string, proxy : Gio.DBusProxy) : Promise<number | null> {
     let positionV = proxy.get_cached_property("Position");
     try {
-        positionV = queryProperty(proxy, "org.mpris.MediaPlayer2.Player", "Position");
+        const result = await mediaCallMethod(
+            name,
+            "org.freedesktop.DBus.Properties.Get",
+            new GLib.Variant("(ss)", [ "org.mpris.MediaPlayer2.Player", "Position" ])
+        );
+        positionV = result.get_child_value(0).get_variant();
     } catch(e) {
         console.warn(`Dropbeat: Failed to query current media position: ${e}`);
     }
@@ -213,7 +201,7 @@ export interface PlayerInfo {
     status : "Playing" | "Paused" | "Stopped" | null;
 }
 
-export function mediaQueryPlayer(name : string) : PlayerInfo | null {
+export async function mediaQueryPlayer(name : string) : Promise<PlayerInfo | null> {
     try {
         const proxy = proxies[name];
         if(!proxy) throw new Error(`No proxy for media player ${name}`);
@@ -239,7 +227,7 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
 
         const date = str(meta["xesam:contentCreated"]);
         const sec = i64(meta["mpris:length"]);
-        const position = queryPosition(proxy);
+        const position = await queryPosition(name, proxy);
         const capturedAt = new Date();
         return {
             title: str(meta["xesam:title"]),
@@ -264,10 +252,11 @@ export function mediaQueryPlayer(name : string) : PlayerInfo | null {
 
 async function mediaCallMethod(
     name : string, method : string, parameters : GLib.Variant | null = null
-) : Promise<void> {
+) : Promise<GLib.Variant> {
+
     const proxy = proxies[name];
     if(!proxy) throw new Error(`No proxy for media player ${name}.`);
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<GLib.Variant>((resolve, reject) => {
         proxy.call(
             method,
             parameters,
@@ -279,28 +268,28 @@ async function mediaCallMethod(
                 if(!p) return reject("Media player was NULL.");
                 try
                 {
-                    p.call_finish(result);
+                    const response = p.call_finish(result);
+                    resolve(response);
                 }
                 catch(e)
                 {
                     return reject(new Error(`${method} failed on player ${name}: ${e}`));
                 }
-                resolve();
             }
         );
     });
 };
 
 export async function mediaTogglePause(name : string) : Promise<void> {
-    return mediaCallMethod(name, "PlayPause");
+    await mediaCallMethod(name, "PlayPause");
 }
 
 export async function mediaPrev(name : string) : Promise<void> {
-    return mediaCallMethod(name, "Previous");
+    await mediaCallMethod(name, "Previous");
 }
 
 export async function mediaNext(name : string) : Promise<void> {
-    return mediaCallMethod(name, "Next");
+    await mediaCallMethod(name, "Next");
 }
 
 export async function mediaSeek(name : string, positionSeconds : number) : Promise<void> {
@@ -313,7 +302,7 @@ export async function mediaSeek(name : string, positionSeconds : number) : Promi
     if(!trackId) throw new Error(`No track ID for media player ${name}.`);
 
     const target = Math.round(Math.max(0, positionSeconds * 1000000));
-    return mediaCallMethod(
+    await mediaCallMethod(
         name,
         "SetPosition",
         new GLib.Variant("(ox)", [ trackId, target ])
@@ -321,29 +310,8 @@ export async function mediaSeek(name : string, positionSeconds : number) : Promi
 }
 
 export async function mediaRaise(name : string) : Promise<void> {
-    if(!bus) throw new Error("Set bus session first.");
-    return new Promise<void>((resolve, reject) => {
-        bus!.call(
-            name,
-            "/org/mpris/MediaPlayer2",
-            "org.mpris.MediaPlayer2",
-            "Raise",
-            null,
-            null,
-            Gio.DBusCallFlags.NONE,
-            -1,
-            null,
-            (connection, result) => {
-                if(!connection) return reject(new Error(`Raise failed on player ${name}: no connection.`));
-                try {
-                    connection.call_finish(result);
-                    resolve();
-                } catch(e) {
-                    reject(new Error(`Raise failed on player ${name}: ${e}`));
-                }
-            }
-        );
-    });
+    // Raise is not part of Player, so you need to specify the full path
+    await mediaCallMethod(name, "org.mpris.MediaPlayer2.Raise");
 }
 
 export function mediaFree() : void {
