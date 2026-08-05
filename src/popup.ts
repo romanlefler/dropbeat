@@ -17,7 +17,6 @@
 
 import Clutter from "gi://Clutter";
 import Gio from "gi://Gio";
-import GLib from "gi://GLib";
 import Meta from "gi://Meta";
 import St from "gi://St";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
@@ -107,7 +106,6 @@ export class Popup {
     #progressFill : St.Widget;
     #progressRemaining : St.Widget;
     #progressInfo : PlayerInfo | null = null;
-    #progressTimer : number | null = null;
     #progressEnabled : boolean = false;
 
     #playerName : string | null = null;
@@ -224,8 +222,7 @@ export class Popup {
         setPointer(this.#progressBar);
         // @ts-ignore
         this.#menuOpenHandler = this.#menu.connect("open-state-changed", (_menu, isOpen) => {
-            if(isOpen && this.#progressEnabled) this.#startProgressTimer();
-            else this.#stopProgressTimer();
+            if(isOpen && this.#progressEnabled) this.#updateProgressBar();
         });
         this.#progressSettingHandler = this.#gSettings.connect(
             "changed::show-progress-bar",
@@ -392,30 +389,12 @@ export class Popup {
         if(enabled) {
             this.#cardBox.add_child(this.#progressBar);
             this.#updateProgressBar();
-            if(this.#menu.isOpen) this.#startProgressTimer();
         } else {
-            this.#stopProgressTimer();
             this.#cardBox.remove_child(this.#progressBar);
         }
     }
 
-    #startProgressTimer() : void {
-        if(this.#progressTimer !== null) return;
-        this.#updateProgressBar();
-        this.#progressTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 16, () => {
-            this.#updateProgressBar();
-            return GLib.SOURCE_CONTINUE;
-        });
-    }
-
-    #stopProgressTimer() : void {
-        if(this.#progressTimer === null) return;
-        GLib.source_remove(this.#progressTimer);
-        this.#progressTimer = null;
-    }
-
     free() {
-        this.#stopProgressTimer();
         this.#menu.disconnect(this.#menuOpenHandler);
         this.#gSettings.disconnect(this.#progressSettingHandler);
         this.#menuItem.destroy();
