@@ -120,7 +120,7 @@ $(ZIP): out
 	@printf -- 'NEEDED: zip\n'
 	mkdir -p $(DIST)
 	# NOTE: Remove resources.js if it ends up being used
-	(cd $(BUILD) && zip ../../$(ZIP) -9r ./ -x './schemas/gschemas.compiled' './mockMpris.js' './resources.js')
+	(cd $(BUILD) && zip ../../$(ZIP) -9r ./ -x './schemas/gschemas.compiled' './resources.js')
 
 # Updates all existing po files by merging them with the pot.
 # If already present, the pot is removed and recreated.
