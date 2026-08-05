@@ -307,12 +307,17 @@ export async function mediaSeek(name : string, positionSeconds : number) : Promi
     const proxy = proxies[name];
     if(!proxy) throw new Error(`No proxy for media player ${name}.`);
 
-    const currentPosition = queryPosition(proxy);
-    if(currentPosition === null) throw new Error(`No position for media player ${name}.`);
+    const metadata = proxy.get_cached_property("Metadata");
+    const trackIdV = metadata?.lookup_value("mpris:trackid", null)?.get_variant();
+    const trackId = str(trackIdV);
+    if(!trackId) throw new Error(`No track ID for media player ${name}.`);
 
-    const target = Math.max(0, positionSeconds * 1000000);
-    const offset = Math.round(target - currentPosition);
-    return mediaCallMethod(name, "Seek", new GLib.Variant("(x)", [ offset ]));
+    const target = Math.round(Math.max(0, positionSeconds * 1000000));
+    return mediaCallMethod(
+        name,
+        "SetPosition",
+        new GLib.Variant("(ox)", [ trackId, target ])
+    );
 }
 
 export async function mediaRaise(name : string) : Promise<void> {
