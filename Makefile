@@ -39,7 +39,7 @@ endif
 
 .PHONY: out pack install clean ts update-po
 
-out: $(POT) ts $(SCHEMAOUT) $(SCHEMACP) $(STATICOUT) $(MOS)
+out: ts $(SCHEMAOUT) $(SCHEMACP) $(STATICOUT) $(MOS)
 
 pack: $(ZIP)
 
