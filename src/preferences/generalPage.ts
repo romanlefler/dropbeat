@@ -216,9 +216,9 @@ export class GeneralPage extends Adw.PreferencesPage {
         internetGroup.add(requestTimeout);
 
         this.add(popupGroup);
-        this.add(keybindingsGroup);
         this.add(fullscreenGroup);
         this.add(behaviorGroup);
+        this.add(keybindingsGroup);
         this.add(internetGroup);
     }
 
