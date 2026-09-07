@@ -13,6 +13,10 @@
             <default>true</default>
             <summary>Show playback progress in the popup card</summary>
         </key>
+        <key name="icon-theme-name" type="s">
+            <default>''</default>
+            <summary>Icon theme for the popup card, or empty to use the default theme</summary>
+        </key>
         <key name="hide-browsers" type="b">
             <default>false</default>
             <summary>Hide browser media players</summary>

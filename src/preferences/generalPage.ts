@@ -23,6 +23,7 @@ import Adw from "gi://Adw";
 import { gettext as _g } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 import { ShortcutRow } from "./shortcutrow.js";
 import { listMonitors, MonitorFingerprint } from "./monitors.js";
+import { listIconThemes } from "./iconThemes.js";
 
 function setVisibilites(value : boolean, ...widgets : Gtk.Widget[]) {
     for(let w of widgets) w.visible = value;
@@ -68,6 +69,28 @@ export class GeneralPage extends Adw.PreferencesPage {
             settings.apply();
         });
         popupGroup.add(showProgressBar);
+
+        const iconThemeOptions = listIconThemes();
+        const iconThemeNames = [ "", ...iconThemeOptions.map(option => option.name) ];
+        const iconThemeLabels = [ _g("Default"), ...iconThemeOptions.map(option => option.label) ];
+        const savedIconTheme = settings.get_string("icon-theme-name");
+        // Keep a saved theme selectable even if it is temporarily unavailable.
+        if(savedIconTheme && !iconThemeNames.includes(savedIconTheme)) {
+            iconThemeNames.push(savedIconTheme);
+            iconThemeLabels.push(savedIconTheme);
+        }
+        const iconTheme = new Adw.ComboRow({
+            title: _g("Icon Theme"),
+            model: Gtk.StringList.new(iconThemeLabels),
+            selected: iconThemeNames.indexOf(savedIconTheme)
+        });
+        iconTheme.connect("notify::selected", (w : Adw.ComboRow) => {
+            const name = iconThemeNames[w.selected];
+            if(name === undefined) return;
+            settings.set_string("icon-theme-name", name);
+            settings.apply();
+        });
+        popupGroup.add(iconTheme);
 
         const fullscreenGroup = new Adw.PreferencesGroup({
             title: _g("Fullscreen"),

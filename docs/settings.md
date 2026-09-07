@@ -3,6 +3,7 @@
 ## Popup
 
 - Progress Bar: Show playback progress in the popup card. This does require an animation, however it only runs when the card is actually open. Defaults to show.
+- Icon Theme: Choose a different icon theme for the card than your system default. The options are the icon themes installed on your system.
 
 ## Keybindings
 
