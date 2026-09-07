@@ -26,6 +26,7 @@ import { PlayerInfo } from "./mpris.js";
 import { gettext as _g } from "./gettext.js";
 import { getStandardCover, getBlurredCover, mvToLocation, BannedImageFormatError } from "./imgprocessing.js";
 import { WndBus } from "./wndbus.js";
+import { IconThemeResolver } from "./iconTheme.js";
 
 function getScreenSize() : { w : number, h : number} {
     const monitor = Main.layoutManager.primaryMonitor;
@@ -93,6 +94,8 @@ export class Popup {
     #menu : PopupMenu.PopupMenu;
     #menuOpenHandler : number;
     #progressSettingHandler : number;
+    #iconThemeSettingHandler : number;
+    #iconTheme : IconThemeResolver | null = null;
     #cardBox : St.BoxLayout;
 
     #coverBin : St.Widget;
@@ -102,8 +105,11 @@ export class Popup {
 
     #pauseButton : St.Button;
     #pauseIcon : St.Icon;
+    #pauseIconName : string = "media-playback-pause-symbolic";
     #prevButton : St.Button;
+    #prevIcon : St.Icon;
     #nextButton : St.Button;
+    #nextIcon : St.Icon;
     #progressBar : St.BoxLayout;
     #progressFill : St.Widget;
     #progressRemaining : St.Widget;
@@ -202,7 +208,14 @@ export class Popup {
         this.#pauseIcon = barWidgets.pauseIcon;
         this.#pauseButton = barWidgets.pauseButton;
         this.#prevButton = barWidgets.prevButton;
+        this.#prevIcon = barWidgets.prevIcon;
         this.#nextButton = barWidgets.nextButton;
+        this.#nextIcon = barWidgets.nextIcon;
+        this.#updateIconTheme();
+        this.#iconThemeSettingHandler = this.#gSettings.connect(
+            "changed::icon-theme-name",
+            () => this.#updateIconTheme()
+        );
 
         const progressWidgets = Popup.createProgressBar();
         this.#progressBar = progressWidgets.bar;
@@ -334,7 +347,9 @@ export class Popup {
             bar,
             pauseIcon,
             pauseButton,
+            prevIcon,
             prevButton,
+            nextIcon,
             nextButton
         };
     }
@@ -398,9 +413,31 @@ export class Popup {
         }
     }
 
+    #updateIconTheme() : void {
+        const name = this.#gSettings.get_string("icon-theme-name");
+        this.#iconTheme = name ? new IconThemeResolver(name) : null;
+        this.#setControlIcon(this.#prevIcon, "media-skip-backward-symbolic");
+        this.#setControlIcon(this.#pauseIcon, this.#pauseIconName);
+        this.#setControlIcon(this.#nextIcon, "media-skip-forward-symbolic");
+    }
+
+    #setControlIcon(icon : St.Icon, name : string) : void {
+        const scale = St.ThemeContext.get_for_stage(global.stage).scale_factor;
+        const path = this.#iconTheme?.lookup(name, icon.icon_size, scale);
+        if(path) {
+            icon.fallback_icon_name = name;
+            icon.gicon = new Gio.FileIcon({ file: Gio.File.new_for_path(path) });
+        } else {
+            icon.set_fallback_icon_name(null);
+            icon.icon_name = name;
+        }
+    }
+
     free() {
         this.#menu.disconnect(this.#menuOpenHandler);
         this.#gSettings.disconnect(this.#progressSettingHandler);
+        this.#gSettings.disconnect(this.#iconThemeSettingHandler);
+        this.#iconTheme = null;
         this.#menuItem.destroy();
         this.#menuItem = null!;
     }
@@ -453,11 +490,10 @@ export class Popup {
         this.#artist.text = this.#artistsText = p.artists?.join(_g(" / ")) || _g("No Artist");
         this.#albumText = p.album || "";
 
-        if(p.status === "Paused" || p.status === "Stopped") {
-            this.#pauseIcon.icon_name = "media-playback-start-symbolic";
-        } else {
-            this.#pauseIcon.icon_name = "media-playback-pause-symbolic";
-        }
+        this.#pauseIconName = p.status === "Paused" || p.status === "Stopped"
+            ? "media-playback-start-symbolic"
+            : "media-playback-pause-symbolic";
+        this.#setControlIcon(this.#pauseIcon, this.#pauseIconName);
     }
 
     async #updateArtAsync(p : PlayerInfo) : Promise<void> {
