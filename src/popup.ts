@@ -44,16 +44,21 @@ function vSpacer(px : number) {
 function setPointer(widget : Clutter.Actor) : void {
     //@ts-ignore
     if(widget.set_cursor_type) {
-        // GNOME 50
+        // GNOME 50 & 51
         //@ts-ignore
         widget.set_cursor_type(Clutter.CursorType.POINTER);
     } else if(global?.display?.set_cursor) {
-        // Pre-GNOME 50
+        // GNOME 46 & 47 use a different kinda cursor
+        // GNOME 48 & GNOME 49 use another
+        const pointerCursor = "POINTER" in Meta.Cursor
+            ? Meta.Cursor.POINTER
+            : (Meta.Cursor as unknown as { POINTING_HAND: Meta.Cursor }).POINTING_HAND;
+
         widget.connect("enter-event", () => {
-            global.display.set_cursor(Meta.Cursor?.POINTER ?? 5);
+            global.display.set_cursor(pointerCursor);
         });
         widget.connect("leave-event", () => {
-            global.display.set_cursor(Meta.Cursor?.DEFAULT ?? 2);
+            global.display.set_cursor(Meta.Cursor.DEFAULT);
         });
     }
 }
