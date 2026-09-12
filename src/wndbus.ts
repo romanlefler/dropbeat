@@ -34,16 +34,21 @@ export interface CreateWndArgs {
     blurcover: string;
 }
 
+interface WndProcess {
+    proc : Gio.Subprocess;
+    stdin : Gio.OutputStream | null;
+    cancellable : Gio.Cancellable;
+}
+
 export class WndBus {
 
     #extDir : Gio.File;
     #wndMainPath : string;
 
-    #proc : Gio.Subprocess | null = null;
-    #stdin : Gio.OutputStream | null = null;
+    #active : WndProcess | null = null;
 
-    #logOutput(s : Gio.InputStream, isError : boolean) : void {
-        s.read_bytes_async(4096, GLib.PRIORITY_DEFAULT, null, (_, res) => {
+    #logOutput(s : Gio.InputStream, isError : boolean, cancellable : Gio.Cancellable) : void {
+        s.read_bytes_async(4096, GLib.PRIORITY_DEFAULT, cancellable, (_, res) => {
             try {
                 const bytes = s.read_bytes_finish(res);
                 if(!bytes.get_size()) return;
@@ -67,9 +72,9 @@ export class WndBus {
                     }
                     else console.log(`DropbeatWnd stdout: ${txt.trimEnd()}`)
                 }
-                this.#logOutput(s, isError);
+                this.#logOutput(s, isError, cancellable);
             } catch(e) {
-                console.error(e);
+                if(!cancellable.is_cancelled()) console.error(e);
             }
         });
     }
@@ -84,13 +89,16 @@ export class WndBus {
     }
 
     free() : void {
-        this.#proc?.force_exit();
-        this.#proc = null;
-        this.#stdin = null;
+        const active = this.#active;
+        this.#active = null;
+        if(!active) return;
+
+        active.cancellable.cancel();
+        active.proc.force_exit();
     }
 
     wndFullscreen(args : UpdateWndArgs, createArgs : CreateWndArgs) : void {
-        if(this.#proc) this.free();
+        this.free();
 
         const argv : string[] = [
             "gjs",
@@ -108,32 +116,37 @@ export class WndBus {
         });
         proc.init(null);
 
-        this.#proc = proc;
-        this.#stdin = proc.get_stdin_pipe();
+        const active : WndProcess = {
+            proc,
+            stdin: proc.get_stdin_pipe(),
+            cancellable: new Gio.Cancellable(),
+        };
+        this.#active = active;
 
         try {
             const stdout = proc.get_stdout_pipe();
             const stderr = proc.get_stderr_pipe();
-            if(stdout) this.#logOutput(stdout, false);
-            if(stderr) this.#logOutput(stderr, true);
+            if(stdout) this.#logOutput(stdout, false, active.cancellable);
+            if(stderr) this.#logOutput(stderr, true, active.cancellable);
         } catch(e) {
             console.error(e);
         }
 
-        proc.wait_async(null, (_, res) => {
+        proc.wait_async(active.cancellable, (_, res) => {
             try {
                 proc.wait_finish(res);
             } catch (e) {
-                console.error(e);
+                if(!active.cancellable.is_cancelled()) console.error(e);
             } finally {
-                this.#proc = null;
-                this.#stdin = null;
+                if(this.#active === active) this.#active = null;
             }
         });
     }
 
     updateWnd(a: UpdateWndArgs): void {
-        if(!this.#stdin) return;
+        const active = this.#active;
+        const stdin = active?.stdin;
+        if(!active || !stdin) return;
 
         const msg = JSON.stringify({
             title: a.title || _g("No Title"),
@@ -143,15 +156,16 @@ export class WndBus {
         }) + "\n";
 
         try {
-            this.#stdin.write_bytes_async(
+            stdin.write_bytes_async(
                 new GLib.Bytes(new TextEncoder().encode(msg)),
                 GLib.PRIORITY_DEFAULT,
-                null,
+                active.cancellable,
                 (_, res) => {
                     try {
-                        this.#stdin?.write_bytes_finish(res);
+                        stdin.write_bytes_finish(res);
                     } catch (e) {
-                        console.error(`DropbeatWnd stdin write failed: ${e}`);
+                        if(!active.cancellable.is_cancelled())
+                            console.error(`DropbeatWnd stdin write failed: ${e}`);
                     }
                 }
             );
