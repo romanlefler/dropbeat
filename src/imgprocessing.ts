@@ -171,64 +171,43 @@ async function write(file : Gio.File, data : Uint8Array) : Promise<void> {
     });
 }
 
-async function readStreamAsync(stream : Gio.DataInputStream) : Promise<string | null> {
-    return new Promise<string | null>((resolve, reject) => {
-        stream.read_until_async("", GLib.PRIORITY_DEFAULT, null, (_stream, result) => {
-            try {
-                const [ str, len ] = stream.read_until_finish(result);
-                if(!len) resolve(null);
-                else resolve(str);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-}
-
 /**
  * Returns if succeeded by default,
  * otherwise if returnStdout is true, returns the stdout output.
  */
 export async function spawnAsync(argv : string[], returnStdout = false) : Promise<boolean | string> {
-    let success : boolean, pid : GLib.Pid | null, stdin : number, stdout : number, stderr : number;
+    let process : Gio.Subprocess;
     try {
-        [ success, pid, stdin, stdout, stderr ] = GLib.spawn_async_with_pipes(
-            null,
+        const stdoutFlag = returnStdout
+            ? Gio.SubprocessFlags.STDOUT_PIPE
+            : Gio.SubprocessFlags.STDOUT_SILENCE;
+        process = Gio.Subprocess.new(
             argv,
-            null,
-            GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-            null
+            stdoutFlag | Gio.SubprocessFlags.STDERR_PIPE
         );
-        if(!pid) throw new Error("Process not spawned.");
     } catch(e) {
         if(returnStdout) throw new Error(`Couldn't spawn command '${argv.join(" ")}'.`);
         else return false;
     }
-    return new Promise<boolean | string>((resolve, reject) => {
-        GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid!, async (_pid, status) => {
+
+    const [ stdout, stderr ] = await new Promise<[string, string]>((resolve, reject) => {
+        process.communicate_utf8_async(null, null, (p, result) => {
             try {
-                const exitCode = status >> 8;
-                if(!exitCode) {
-                    if(returnStdout) {
-                        const stdoutStream = new Gio.UnixInputStream({ fd: stdout, close_fd: false });
-                        const dataStream = new Gio.DataInputStream({ base_stream: stdoutStream });
-                        const output = await readStreamAsync(dataStream);
-                        resolve(output ?? "");
-                    } else resolve(true);
-                } else {
-                        const stderrStream = new Gio.UnixInputStream({ fd: stderr, close_fd: false });
-                        const dataStream = new Gio.DataInputStream({ base_stream: stderrStream });
-                        const errorMsg = await readStreamAsync(dataStream);
-                        console.error(`Command '${argv.join(" ")}' failed with status ${exitCode}: ${errorMsg}.`);
-                        resolve(false);
-                }
+                if(!p) return reject(new Error("Process was NULL."));
+                const [ , processStdout, processStderr ] = p.communicate_utf8_finish(result);
+                resolve([ processStdout ?? "", processStderr ?? "" ]);
             } catch(e) {
                 reject(e);
-            } finally {
-                GLib.spawn_close_pid(pid!);
             }
         });
     });
+    if(process.get_successful()) return returnStdout ? stdout ?? "" : true;
+
+    const reason = process.get_if_exited()
+        ? `status ${process.get_exit_status()}`
+        : `signal ${process.get_term_sig()}`;
+    console.error(`Command '${argv.join(" ")}' failed with ${reason}: ${stderr ?? ""}.`);
+    return false;
 }
 
 function arrStartEq(actual : Uint8Array, other : Uint8Array) : boolean {
