@@ -17,6 +17,7 @@
 
 import Clutter from "gi://Clutter";
 import Gio from "gi://Gio";
+import GLib from "gi://GLib";
 import Meta from "gi://Meta";
 import St from "gi://St";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
@@ -120,6 +121,8 @@ export class Popup {
     #progressRemaining : St.Widget;
     #progressInfo : PlayerInfo | null = null;
     #progressEnabled : boolean = false;
+    #progressUpdateTimer : number | null = null;
+    #menuIsOpen : boolean = false;
 
     #playerName : string | null = null;
     readonly #gSettings : Gio.Settings;
@@ -244,7 +247,9 @@ export class Popup {
         setPointer(this.#progressBar);
         // @ts-ignore
         this.#menuOpenHandler = this.#menu.connect("open-state-changed", (_menu, isOpen) => {
-            if(isOpen && this.#progressEnabled) this.#updateProgressBar();
+            this.#menuIsOpen = isOpen;
+            if(isOpen) this.#startProgressUpdates();
+            else this.#stopProgressUpdates();
         });
         this.#progressSettingHandler = this.#gSettings.connect(
             "changed::show-progress-bar",
@@ -406,6 +411,31 @@ export class Popup {
         this.#progressRemaining.set_width(width - progressWidth);
     }
 
+    #startProgressUpdates() : void {
+        if(!this.#progressEnabled || this.#progressUpdateTimer !== null) return;
+
+        this.#updateProgressBar();
+        this.#progressUpdateTimer = GLib.timeout_add(
+            GLib.PRIORITY_DEFAULT,
+            250,
+            () => {
+                if(!this.#menuIsOpen || !this.#progressEnabled) {
+                    this.#progressUpdateTimer = null;
+                    return GLib.SOURCE_REMOVE;
+                }
+
+                this.#updateProgressBar();
+                return GLib.SOURCE_CONTINUE;
+            }
+        );
+    }
+
+    #stopProgressUpdates() : void {
+        if(this.#progressUpdateTimer === null) return;
+        GLib.source_remove(this.#progressUpdateTimer);
+        this.#progressUpdateTimer = null;
+    }
+
     #setProgressEnabled(enabled : boolean) : void {
         if(enabled === this.#progressEnabled) return;
         this.#progressEnabled = enabled;
@@ -413,7 +443,9 @@ export class Popup {
         if(enabled) {
             this.#cardBox.add_child(this.#progressBar);
             this.#updateProgressBar();
+            if(this.#menuIsOpen) this.#startProgressUpdates();
         } else {
+            this.#stopProgressUpdates();
             this.#cardBox.remove_child(this.#progressBar);
         }
     }
@@ -439,6 +471,8 @@ export class Popup {
     }
 
     free() {
+        this.#menuIsOpen = false;
+        this.#stopProgressUpdates();
         this.#menu.disconnect(this.#menuOpenHandler);
         this.#gSettings.disconnect(this.#progressSettingHandler);
         this.#gSettings.disconnect(this.#iconThemeSettingHandler);

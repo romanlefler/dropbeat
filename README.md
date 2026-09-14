@@ -1,6 +1,6 @@
 # Dropbeat
 
-Dropbeat is a GNOME shell extension that shows a cool card to control your media player. Supports GNOME 48, 49, and 50.
+Dropbeat is a GNOME shell extension that shows a cool card to control your media player. Supports GNOME 46–51.
 
 ![Screenshot](./docs/assets/screenshot.png)
 
